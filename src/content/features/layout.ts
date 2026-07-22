@@ -65,6 +65,7 @@ export function resetLayout(): void {
   document.querySelectorAll('.' + DEPLOY_TOP).forEach((el) => el.classList.remove(DEPLOY_TOP));
   document.querySelectorAll<HTMLElement>('.' + LIFTED).forEach((el) => {
     el.style.removeProperty('margin-left');
+    el.style.removeProperty('padding-left');
     el.classList.remove(LIFTED);
   });
   document.querySelector('.js-discussion')?.removeAttribute(SIG);
@@ -117,15 +118,17 @@ function findDeploymentsBox(): HTMLElement | null {
 }
 
 /**
- * Lift a box into the timeline. Its `tmp-ml-md-6` (a desktop-only left margin
- * tuned for its spot at the bottom of the merge chain) over-indents it in the
- * comment column, so drop it — which is exactly what happens on mobile, where
- * that `-md-` utility doesn't apply and the boxes already line up. Inline
- * `!important` is required to beat the utility's own `!important`.
+ * Lift a box into the timeline. It carries GitHub's desktop-only left
+ * indent (`tmp-ml-md-6` margin + `tmp-pl-md-3` padding) tuned for its spot at
+ * the bottom of the merge chain; both over-indent it in the comment column, so
+ * zero them — which is exactly what happens on mobile, where those `-md-`
+ * utilities don't apply and the boxes already line up. Inline `!important` is
+ * required to beat the utilities' own `!important`.
  */
 function lift(el: HTMLElement): void {
   el.classList.add(LIFTED);
   el.style.setProperty('margin-left', '0', 'important');
+  el.style.setProperty('padding-left', '0', 'important');
 }
 
 /** Reverse grouped deployment rows within each `.merge-status-list`. */
