@@ -87,15 +87,22 @@ function findMergeBox(): HTMLElement | null {
   );
 }
 
-/** The "Add a comment" composer, via its unique new-comment field. */
+/**
+ * The "Add a comment" composer only — NOT other people's / CI comments. The
+ * new-comment box carries the specific `.timeline-new-comment` class; the
+ * generic `.timeline-comment-wrapper` / `.js-comment-container` wrap every
+ * comment, so we never fall back to those.
+ */
 function findComposeBox(): HTMLElement | null {
   const field = document.querySelector<HTMLElement>(
-    '#new_comment_field, textarea[name="comment[body]"], .js-new-comment-form',
+    '#new_comment_field, textarea[name="comment[body]"]',
   );
-  const wrapper = field?.closest<HTMLElement>(
-    '.timeline-comment-wrapper, .discussion-timeline-actions, .js-comment-container',
+  return (
+    document.querySelector<HTMLElement>('.timeline-new-comment') ||
+    document.querySelector<HTMLElement>('form.js-new-comment-form') ||
+    field?.closest<HTMLElement>('form') ||
+    null
   );
-  return wrapper || document.querySelector<HTMLElement>('.discussion-timeline-actions') || null;
 }
 
 /** The "This branch was successfully deployed" box. */

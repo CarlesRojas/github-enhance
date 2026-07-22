@@ -25,6 +25,15 @@ function blockFor(el: HTMLElement, tight: boolean): HTMLElement {
   return el.closest<HTMLElement>('.discussion-sidebar-item') || el;
 }
 
+/** An item's title heading (never its body, so label/user text can't match). */
+function titleOf(item: HTMLElement): HTMLElement | null {
+  return (
+    item.querySelector<HTMLElement>('.discussion-sidebar-heading') ||
+    item.querySelector<HTMLElement>('summary, h3, h2') ||
+    item.querySelector<HTMLElement>('.text-bold')
+  );
+}
+
 function locate(sec: SidebarSectionDef): HTMLElement[] {
   const found = new Set<HTMLElement>();
 
@@ -34,26 +43,21 @@ function locate(sec: SidebarSectionDef): HTMLElement[] {
       .forEach((el) => found.add(blockFor(el, !!sec.tight)));
   }
 
-  // For action controls (tight) scan buttons/links; for titled sections scan
-  // heading-like elements only, to avoid matching stray control text.
-  const headingSelector = sec.tight
-    ? 'button, summary, a, .btn-link'
-    : '.discussion-sidebar-heading, summary, h3, h2, .text-bold';
-
   document.querySelectorAll<HTMLElement>('.discussion-sidebar-item').forEach((item) => {
-    let matched: HTMLElement | null = null;
-    for (const el of item.querySelectorAll<HTMLElement>(headingSelector)) {
-      const text = normText(el);
-      if (text && sec.match.some((m) => text.includes(m))) {
-        matched = el;
-        break;
+    if (sec.tight) {
+      // Action control (e.g. "Lock conversation") — scan interactive elements.
+      for (const el of item.querySelectorAll<HTMLElement>('button, summary, a, .btn-link')) {
+        if (sec.match.some((m) => normText(el).includes(m))) {
+          found.add(blockFor(el, true));
+          break;
+        }
       }
+    } else {
+      // Titled section — match ONLY the item's title, so body content like
+      // label names or usernames can never trigger a false hide.
+      const text = normText(titleOf(item));
+      if (text && sec.match.some((m) => text.includes(m))) found.add(item);
     }
-    if (!matched && !sec.tight) {
-      const text = normText(item);
-      if (text && sec.match.some((m) => text.includes(m))) matched = item;
-    }
-    if (matched) found.add(blockFor(sec.tight ? matched : item, !!sec.tight));
   });
 
   return [...found];
