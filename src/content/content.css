@@ -36,7 +36,8 @@
 .ghe-checks-in-sidebar .branch-action-item-icon,
 .ghe-checks-in-sidebar .completeness-indicator,
 .ghe-checks-in-sidebar .TimelineItem-badge,
-.ghe-checks-in-sidebar .merge-status-icon {
+.ghe-checks-in-sidebar .merge-status-icon,
+.ghe-checks-in-sidebar [class*="mergeability" i] {
   display: none !important;
 }
 
