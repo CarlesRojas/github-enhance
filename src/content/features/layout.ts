@@ -63,7 +63,10 @@ export function resetLayout(): void {
     node.removeAttribute(MOVED);
   });
   document.querySelectorAll('.' + DEPLOY_TOP).forEach((el) => el.classList.remove(DEPLOY_TOP));
-  document.querySelectorAll('.' + LIFTED).forEach((el) => el.classList.remove(LIFTED));
+  document.querySelectorAll<HTMLElement>('.' + LIFTED).forEach((el) => {
+    el.style.removeProperty('margin-left');
+    el.classList.remove(LIFTED);
+  });
   document.querySelector('.js-discussion')?.removeAttribute(SIG);
 }
 
@@ -111,6 +114,24 @@ function findComposeBox(): HTMLElement | null {
 function findDeploymentsBox(): HTMLElement | null {
   const wrapper = document.querySelector<HTMLElement>('[data-url*="deployments_box"]');
   return wrapper?.closest<HTMLElement>('.branch-action') ?? null;
+}
+
+/**
+ * Line up the lifted boxes' left edge with the comment / PR-description column.
+ * Measured live so it beats GitHub's `!important` left-margin utilities (an
+ * injected stylesheet class can't) and adapts to the current width.
+ */
+function alignLiftedBoxes(discussion: HTMLElement): void {
+  const ref = discussion.querySelector('.comment-body, .markdown-body');
+  const target = ref?.getBoundingClientRect().left ?? 0;
+  if (!target) return; // not laid out (e.g. in tests) — leave as-is
+  document.querySelectorAll<HTMLElement>('.' + LIFTED).forEach((el) => {
+    const left = el.getBoundingClientRect().left;
+    if (!left) return;
+    const currentMargin = parseFloat(getComputedStyle(el).marginLeft) || 0;
+    const aligned = Math.round(currentMargin - (left - target));
+    el.style.setProperty('margin-left', `${aligned}px`, 'important');
+  });
 }
 
 /** Reverse grouped deployment rows within each `.merge-status-list`. */
@@ -192,5 +213,6 @@ export function applyLayout(settings: Settings): void {
     }
   }
 
+  alignLiftedBoxes(discussion);
   discussion.setAttribute(SIG, sig);
 }
