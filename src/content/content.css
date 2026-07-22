@@ -145,13 +145,24 @@ html[data-ghe-redesign] #partial-pull-merging .branch-action-item {
 }
 
 /* While the checks box is still loading (its inner card hasn't rendered
-   yet), give the wrapper the card's bg and radius so the loading state
-   doesn't flash flat and square. Steps aside as soon as the card exists. */
+   yet), the wrapper takes the card's bg, border, and radius so the loading
+   state doesn't flash flat and square. Steps aside once the card exists. */
 html[data-ghe-redesign] [data-testid="mergebox-partial"]:not(:has(.border)),
 html[data-ghe-redesign] #partial-pull-merging:not(:has(.branch-action-item)) {
   background-color: var(--ghe-card-bg);
+  border: 1px solid var(--ghe-card-border);
   border-radius: var(--ghe-radius);
   overflow: hidden;
+}
+/* The inner loading chrome paints its own square bg/border on top of the
+   rounded wrapper (its border gets corner-clipped by overflow:hidden) —
+   flatten it; the wrapper provides both instead. */
+html[data-ghe-redesign] [data-testid="mergebox-partial"]:not(:has(.border)) > *,
+html[data-ghe-redesign] [data-testid="mergebox-partial"]:not(:has(.border)) > * > *,
+html[data-ghe-redesign] #partial-pull-merging:not(:has(.branch-action-item)) > *,
+html[data-ghe-redesign] #partial-pull-merging:not(:has(.branch-action-item)) > * > * {
+  background-color: transparent !important;
+  border-color: transparent !important;
 }
 
 /* Checks card state accents. The overall mergeability icon carries the
