@@ -25,20 +25,13 @@ export interface SidebarSectionDef {
    * wrapper so a neighbouring control isn't hidden too.
    */
   tight?: boolean;
-  /** Shown as a hint in the popup when the section is conditional. */
-  note?: string;
 }
 
 export const SIDEBAR_SECTIONS: SidebarSectionDef[] = [
   { key: 'reviewers', label: 'Reviewers', match: ['reviewer'] },
   { key: 'assignees', label: 'Assignees', match: ['assignee'] },
   { key: 'labels', label: 'Labels', match: ['label'] },
-  {
-    key: 'projects',
-    label: 'Projects',
-    match: ['project'],
-    note: 'Only appears on repos with Projects enabled.',
-  },
+  { key: 'projects', label: 'Projects', match: ['project'] },
   { key: 'milestone', label: 'Milestone', match: ['milestone'] },
   {
     key: 'development',
@@ -62,7 +55,7 @@ export const SIDEBAR_SECTIONS: SidebarSectionDef[] = [
     key: 'lock',
     label: 'Lock conversation',
     match: ['lock conversation'],
-    containers: ['.js-lock-conversation'],
+    containers: ['.lock-toggle-link', '.js-lock-conversation'],
     tight: true,
   },
 ];

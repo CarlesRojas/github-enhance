@@ -124,12 +124,11 @@ function SidebarGroup({ settings, update }: GroupProps) {
     >
       {SIDEBAR_SECTIONS.map((section) => {
         const visible = settings.sidebar.sections[section.key] ?? true;
-        const status = visible ? 'Shown' : 'Hidden';
         return (
           <Row
             key={section.key}
             label={section.label}
-            description={section.note ? `${status} · ${section.note}` : status}
+            description={visible ? 'Shown' : 'Hidden'}
             control={
               <Toggle
                 checked={visible}

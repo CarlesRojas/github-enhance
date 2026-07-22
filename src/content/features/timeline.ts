@@ -42,28 +42,37 @@ export function resetTimeline(): void {
   document.querySelector('.js-discussion')?.removeAttribute(FLAG);
 }
 
+/** The first comment in the conversation — the PR/issue description. */
 function descriptionEntry(discussion: HTMLElement): HTMLElement | null {
-  const body = discussion.querySelector<HTMLElement>('.comment-body');
-  return body?.closest<HTMLElement>('.js-timeline-item, .TimelineItem, .timeline-comment-wrapper') ?? null;
+  const first = discussion.querySelector<HTMLElement>(
+    '.timeline-comment, .comment-body, .markdown-body',
+  );
+  return (
+    first?.closest<HTMLElement>(
+      '.js-timeline-item, .TimelineItem, .timeline-comment-wrapper',
+    ) ?? null
+  );
 }
 
-function findMergeBox(root: ParentNode): HTMLElement | null {
+/** The checks / merge status box (classic id, or the newer React mergebox). */
+function findMergeBox(): HTMLElement | null {
   return (
-    root.querySelector<HTMLElement>('#partial-pull-merging') ||
-    root.querySelector<HTMLElement>('[data-testid="mergebox-partial"]') ||
-    root.querySelector<HTMLElement>('.js-merge-pr, .merge-pr, .merge-message') ||
+    document.querySelector<HTMLElement>('#partial-pull-merging') ||
+    document.querySelector<HTMLElement>('[data-testid="mergebox-partial"]') ||
+    document.querySelector<HTMLElement>('.js-merge-pr, .merge-pr, .merge-message') ||
     null
   );
 }
 
-function findComposeBox(root: ParentNode): HTMLElement | null {
-  const field = root.querySelector<HTMLElement>(
+/** The "Add a comment" composer, via its unique new-comment field. */
+function findComposeBox(): HTMLElement | null {
+  const field = document.querySelector<HTMLElement>(
     '#new_comment_field, textarea[name="comment[body]"], .js-new-comment-form',
   );
   const wrapper = field?.closest<HTMLElement>(
-    '.discussion-timeline-actions, .timeline-comment-wrapper, .js-comment-container',
+    '.timeline-comment-wrapper, .discussion-timeline-actions, .js-comment-container',
   );
-  return wrapper || root.querySelector<HTMLElement>('.discussion-timeline-actions') || null;
+  return wrapper || document.querySelector<HTMLElement>('.discussion-timeline-actions') || null;
 }
 
 export function applyTimeline(settings: Settings): void {
@@ -77,11 +86,7 @@ export function applyTimeline(settings: Settings): void {
   }
   if (applied) return; // Already reordered this page — idempotent.
 
-  const bucket =
-    discussion.closest<HTMLElement>('#discussion_bucket') ||
-    discussion.parentElement ||
-    discussion;
-
+  // Nothing we move may be an ancestor of the discussion list.
   const safe = (n: HTMLElement | null): n is HTMLElement =>
     !!n && n !== discussion && !n.contains(discussion);
 
@@ -95,13 +100,11 @@ export function applyTimeline(settings: Settings): void {
       !(description && (e.contains(description) || description.contains(e))),
   );
 
-  const mergeBox = findMergeBox(bucket);
-  const composeBox = findComposeBox(bucket);
+  const mergeBox = findMergeBox();
+  const composeBox = findComposeBox();
 
   // Nothing worth doing yet (e.g. page still loading) — try again next pass.
-  const willMove =
-    reverseSet.length >= 2 || safe(mergeBox) || safe(composeBox);
-  if (!willMove) return;
+  if (reverseSet.length < 2 && !safe(mergeBox) && !safe(composeBox)) return;
 
   // Record original positions before moving anything (enables restore).
   if (safe(mergeBox)) markOrigin(mergeBox);
@@ -117,12 +120,10 @@ export function applyTimeline(settings: Settings): void {
     .reverse()
     .forEach((e) => safe(e) && fragment.appendChild(e));
 
-  // Insert right after the description, at the top level of the discussion.
-  const ref =
-    description && description.parentElement === discussion
-      ? description.nextSibling
-      : discussion.firstChild;
-  discussion.insertBefore(fragment, ref);
+  // Insert right after the description, wherever the description lives.
+  const parent = description?.parentElement ?? discussion;
+  const ref = description ? description.nextSibling : discussion.firstChild;
+  parent.insertBefore(fragment, ref);
 
   discussion.setAttribute(FLAG, '1');
 }
