@@ -132,17 +132,15 @@ html[data-ghe-redesign] {
     var(--ghe-card-bg) 96%,
     var(--fgColor-default, var(--color-fg-default, #1f2328))
   );
-  /* Highlighted (selected) card: neutral — a stronger shade of the same
-     card bg plus the theme's emphasis (gray) border, no accent color. */
-  --ghe-selected-bg: color-mix(
-    in srgb,
-    var(--ghe-card-bg) 92%,
-    var(--fgColor-default, var(--color-fg-default, #1f2328))
+  /* Highlighted (selected) card: accent-tinted bg with an accent border. */
+  --ghe-selected-bg: var(--bgColor-accent-muted, var(--color-accent-subtle, #ddf4ff));
+  --ghe-selected-border: var(
+    --borderColor-accent-emphasis,
+    var(--color-accent-emphasis, #0969da)
   );
-  --ghe-selected-border: var(--borderColor-emphasis, #818b98);
   --ghe-selected-hover-bg: color-mix(
     in srgb,
-    var(--ghe-card-bg) 88%,
+    var(--ghe-selected-bg) 92%,
     var(--fgColor-default, var(--color-fg-default, #1f2328))
   );
 }
