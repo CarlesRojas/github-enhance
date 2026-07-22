@@ -89,9 +89,10 @@ export interface Settings {
     hideCurrentYear: boolean; // drop the year when it's the current year
   };
   layout: {
-    checksTop: boolean; // move the checks / merge box above the timeline
+    // Move the checks / merge box up: above the timeline on mobile, into the
+    // sidebar on desktop (when the sidebar is shown as a column).
+    checksTop: boolean;
     composeTop: boolean; // move the "Add a comment" box above the timeline
-    invertTimeline: boolean; // reverse the timeline items (newest first)
     hideNotices: boolean; // hide the Community Guidelines + ProTip notes
   };
   sidebar: {
@@ -108,7 +109,6 @@ export const DEFAULT_SETTINGS: Settings = {
   layout: {
     checksTop: false,
     composeTop: false,
-    invertTimeline: false,
     hideNotices: true,
   },
   sidebar: {

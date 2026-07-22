@@ -1,29 +1,18 @@
-// Feature 4/5 (experimental): rearrange the pull-request conversation.
+// Feature 5: move the checks and compose boxes up in the PR conversation.
 //
-// Three independent toggles:
-//   • checksTop      — move the checks / merge box above the timeline
-//   • composeTop     — move the "Add a comment" box above the timeline
-//   • invertTimeline — reverse the timeline items (newest first), in place
-//
-// With everything on the order becomes: description, checks, compose, then the
-// reversed timeline. Each toggle also works on its own.
-//
-// Inverting also, in the timeline order:
-//   • reverses grouped deployment rows inside the ".merge-status-list" lists
-//     (GitHub packs several deployments into one row list), and
-//   • lifts the "deployments box" ("This branch was successfully deployed") to
-//     sit right above the newest timeline item, with its divider flipped to the
-//     bottom.
+//   • composeTop — move the "Add a comment" box above the timeline.
+//   • checksTop  — move the checks / merge box up: above the timeline on
+//     mobile, or into the sidebar on desktop (when the sidebar is a column).
 //
 // Every moved node leaves a placeholder at its original spot. The whole thing
-// reconciles from a clean slate whenever the desired arrangement changes, so
-// any combination of toggles restores correctly without a reload.
+// reconciles from a clean slate whenever the desired arrangement changes —
+// including on resize, when the checks box hops between top and sidebar — so
+// any state restores correctly without a reload.
 
 import { Settings } from '../../shared/settings';
 
 const SIG = 'data-ghe-layout';
 const MOVED = 'data-ghe-moved';
-const DEPLOY_TOP = 'ghe-deploy-top';
 const LIFTED = 'ghe-lifted';
 
 interface Movable extends HTMLElement {
@@ -38,18 +27,16 @@ function markOrigin(node: Movable): void {
   node.setAttribute(MOVED, '1');
 }
 
-/** Reverse a set of sibling nodes in place, at the first node's position. */
-function reverseInPlace(nodes: HTMLElement[]): void {
-  if (nodes.length < 2) return;
-  nodes.forEach(markOrigin);
-  const anchor = (nodes[0] as Movable).__ghePlaceholder;
-  if (!anchor || !anchor.parentNode) return;
-  const frag = document.createDocumentFragment();
-  nodes
-    .slice()
-    .reverse()
-    .forEach((n) => frag.appendChild(n));
-  anchor.parentNode.insertBefore(frag, anchor);
+/**
+ * Zero a moved box's desktop-only left indent (`tmp-ml-md-6` margin +
+ * `tmp-pl-md-3` padding, tuned for its original spot) so it lines up with the
+ * column it's moved into. Inline `!important` is required to beat the
+ * utilities' own `!important`.
+ */
+function lift(el: HTMLElement): void {
+  el.classList.add(LIFTED);
+  el.style.setProperty('margin-left', '0', 'important');
+  el.style.setProperty('padding-left', '0', 'important');
 }
 
 export function resetLayout(): void {
@@ -62,7 +49,6 @@ export function resetLayout(): void {
     node.__ghePlaceholder = undefined;
     node.removeAttribute(MOVED);
   });
-  document.querySelectorAll('.' + DEPLOY_TOP).forEach((el) => el.classList.remove(DEPLOY_TOP));
   document.querySelectorAll<HTMLElement>('.' + LIFTED).forEach((el) => {
     el.style.removeProperty('margin-left');
     el.style.removeProperty('padding-left');
@@ -93,12 +79,7 @@ function findMergeBox(): HTMLElement | null {
   );
 }
 
-/**
- * The "Add a comment" composer only — NOT other people's / CI comments. The
- * new-comment box carries the specific `.timeline-new-comment` class; the
- * generic `.timeline-comment-wrapper` / `.js-comment-container` wrap every
- * comment, so we never fall back to those.
- */
+/** The "Add a comment" composer only — NOT other people's / CI comments. */
 function findComposeBox(): HTMLElement | null {
   const field = document.querySelector<HTMLElement>(
     '#new_comment_field, textarea[name="comment[body]"]',
@@ -111,102 +92,81 @@ function findComposeBox(): HTMLElement | null {
   );
 }
 
-/** The "This branch was successfully deployed" box. */
-function findDeploymentsBox(): HTMLElement | null {
-  const wrapper = document.querySelector<HTMLElement>('[data-url*="deployments_box"]');
-  return wrapper?.closest<HTMLElement>('.branch-action') ?? null;
+function findSidebar(): HTMLElement | null {
+  return (
+    document.querySelector<HTMLElement>('#partial-discussion-sidebar') ||
+    document.querySelector<HTMLElement>('.Layout-sidebar')
+  );
 }
 
-/**
- * Lift a box into the timeline. It carries GitHub's desktop-only left
- * indent (`tmp-ml-md-6` margin + `tmp-pl-md-3` padding) tuned for its spot at
- * the bottom of the merge chain; both over-indent it in the comment column, so
- * zero them — which is exactly what happens on mobile, where those `-md-`
- * utilities don't apply and the boxes already line up. Inline `!important` is
- * required to beat the utilities' own `!important`.
- */
-function lift(el: HTMLElement): void {
-  el.classList.add(LIFTED);
-  el.style.setProperty('margin-left', '0', 'important');
-  el.style.setProperty('padding-left', '0', 'important');
+/** True when the sidebar is rendered as a right-hand column (desktop widths). */
+function sidebarIsColumn(): boolean {
+  const sidebar = findSidebar();
+  if (!sidebar) return false;
+  const r = sidebar.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) return false;
+  return r.left > window.innerWidth / 2;
 }
 
-/** Reverse grouped deployment rows within each `.merge-status-list`. */
-function reverseDeployRows(discussion: HTMLElement): void {
-  discussion.querySelectorAll<HTMLElement>('.merge-status-list').forEach((list) => {
-    if (list.closest('.comment-body, .markdown-body')) return;
-    const rows = Array.from(list.children).filter((c) =>
-      /deployed/i.test(c.textContent || ''),
-    ) as HTMLElement[];
-    if (rows.length >= 2) reverseInPlace(rows);
-  });
+type ChecksPlacement = 'off' | 'top' | 'sidebar';
+
+function checksPlacement(settings: Settings): ChecksPlacement {
+  if (!settings.layout.checksTop) return 'off';
+  return sidebarIsColumn() ? 'sidebar' : 'top';
+}
+
+function insertAfterDescription(
+  node: HTMLElement,
+  discussion: HTMLElement,
+  description: HTMLElement | null,
+): void {
+  const parent = description?.parentElement ?? discussion;
+  const ref = description ? description.nextSibling : discussion.firstChild;
+  parent.insertBefore(node, ref);
 }
 
 export function applyLayout(settings: Settings): void {
   const discussion = document.querySelector<HTMLElement>('.js-discussion');
   if (!discussion) return;
 
-  const { checksTop, composeTop, invertTimeline } = settings.layout;
-  const sig = `${checksTop ? 1 : 0}${composeTop ? 1 : 0}${invertTimeline ? 1 : 0}`;
-  const current = discussion.getAttribute(SIG) ?? '000';
+  const checks = checksPlacement(settings);
+  const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';
+  const sig = `${checks}:${compose}`;
+  const current = discussion.getAttribute(SIG) ?? 'off:off';
   if (current === sig) return;
 
   // Reconcile from a clean slate every time the desired arrangement changes.
   resetLayout();
-  if (sig === '000') return;
+  if (sig === 'off:off') return;
 
   const safe = (n: HTMLElement | null): n is HTMLElement =>
     !!n && n !== discussion && !n.contains(discussion);
 
+  const mergeBox = checks !== 'off' ? findMergeBox() : null;
+  const composeBox = compose !== 'off' ? findComposeBox() : null;
+  const sidebar = checks === 'sidebar' ? findSidebar() : null;
+
+  // Wait until everything we need is present (page still loading) — retry.
+  if (checks !== 'off' && !safe(mergeBox)) return;
+  if (checks === 'sidebar' && !sidebar) return;
+  if (compose !== 'off' && !safe(composeBox)) return;
+
   const description = descriptionEntry(discussion);
-  const entries = Array.from(
-    discussion.querySelectorAll<HTMLElement>('.js-timeline-item'),
-  );
-  const items = entries.filter(
-    (e) =>
-      e !== description &&
-      !(description && (e.contains(description) || description.contains(e))),
-  );
 
-  const mergeBox = checksTop ? findMergeBox() : null;
-  const composeBox = composeTop ? findComposeBox() : null;
-  const willReverse = invertTimeline && items.length >= 2;
-
-  // Nothing actionable yet (e.g. page still loading) — leave sig unset to retry.
-  if (!safe(mergeBox) && !safe(composeBox) && !willReverse) return;
-
-  // Move checks/compose to just after the description (checks first). They
-  // carry their own left offset (e.g. the mergebox's `ml-md-6`) for their
-  // original spot, so neutralise it to line up with the timeline's left edge.
-  if (safe(mergeBox)) {
-    markOrigin(mergeBox);
-    lift(mergeBox);
-  }
+  // Compose first, then checks after the description, so checks sits above it.
   if (safe(composeBox)) {
     markOrigin(composeBox);
     lift(composeBox);
-  }
-  if (safe(mergeBox) || safe(composeBox)) {
-    const top = document.createDocumentFragment();
-    if (safe(mergeBox)) top.appendChild(mergeBox);
-    if (safe(composeBox)) top.appendChild(composeBox);
-    const parent = description?.parentElement ?? discussion;
-    const ref = description ? description.nextSibling : discussion.firstChild;
-    parent.insertBefore(top, ref);
+    insertAfterDescription(composeBox, discussion, description);
   }
 
-  // Reverse the timeline items, then the grouped deployment rows within them.
-  if (willReverse) {
-    reverseInPlace(items);
-    reverseDeployRows(discussion);
-
-    // Lift the deployments box above the (now newest-first) timeline.
-    const box = findDeploymentsBox();
-    const firstItem = items[items.length - 1]; // newest, now topmost
-    if (safe(box) && firstItem.parentNode) {
-      markOrigin(box);
-      box.classList.add(DEPLOY_TOP);
-      firstItem.parentNode.insertBefore(box, firstItem);
+  if (safe(mergeBox)) {
+    markOrigin(mergeBox);
+    lift(mergeBox);
+    if (checks === 'sidebar' && sidebar) {
+      sidebar.prepend(mergeBox);
+    } else {
+      insertAfterDescription(mergeBox, discussion, description);
     }
   }
 

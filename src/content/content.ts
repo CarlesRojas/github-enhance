@@ -64,6 +64,14 @@ async function init(): Promise<void> {
   for (const evt of ['turbo:load', 'turbo:render', 'pjax:end', 'pageshow']) {
     document.addEventListener(evt, () => schedule());
   }
+
+  // The checks box hops between the timeline top and the sidebar by width, so
+  // re-evaluate when the window is resized (debounced).
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => schedule(), 150);
+  });
 }
 
 void init();

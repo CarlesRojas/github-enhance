@@ -32,20 +32,21 @@ native behavior instantly — no reload.
 
 ### 2. Pull Request Layout (experimental)
 
-Rearrange the PR conversation. Three independent toggles, plus a declutter
-option:
+Rearrange the PR conversation:
 
-- **Move checks to top** — the checks / merge box above the timeline.
-- **Move comment box to top** — the “Add a comment” box above the timeline.
-- **Invert timeline** — timeline items newest-first, in place.
+- **Move checks up** — the checks / merge box goes above the timeline on
+  mobile, or into the sidebar on desktop (when the sidebar is a column).
+  Re-evaluated on resize.
+- **Move comment box to top** — the “Add a comment” box above the timeline
+  (only your composer, not other people’s / CI comments).
 - **Hide guidelines & ProTip** — hide the Community Guidelines reminder and the
   “ProTip!” line.
 
-With the three layout toggles on, the order becomes: description, checks,
-compose box, then the reversed timeline. Every moved node leaves a placeholder
-at its original spot, so any combination reconciles back without a reload. The
-checks box is React-managed, so it *may* snap back if GitHub re-renders it —
-hence experimental.
+Moved boxes are lined up with the comment column (their desktop-only left
+indent is zeroed), and every moved node leaves a placeholder at its original
+spot, so any combination reconciles back — including on resize — without a
+reload. The checks box is React-managed, so it *may* snap back if GitHub
+re-renders it — hence experimental.
 
 ### 3. Pull Request Sidebar
 

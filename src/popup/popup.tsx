@@ -144,15 +144,15 @@ function LayoutGroup({ settings, update }: GroupProps) {
       <Row
         label={
           <>
-            Move checks to top
+            Move checks up
             <span className="tag">Experimental</span>
           </>
         }
-        description="Show the checks / merge box above the timeline."
+        description="Above the timeline on mobile; into the sidebar on wide screens."
         control={
           <Toggle
             checked={l.checksTop}
-            label="Move checks to top"
+            label="Move checks up"
             onChange={(v) => update((s) => (s.layout.checksTop = v))}
           />
         }
@@ -170,22 +170,6 @@ function LayoutGroup({ settings, update }: GroupProps) {
             checked={l.composeTop}
             label="Move comment box to top"
             onChange={(v) => update((s) => (s.layout.composeTop = v))}
-          />
-        }
-      />
-      <Row
-        label={
-          <>
-            Invert timeline
-            <span className="tag">Experimental</span>
-          </>
-        }
-        description="Order timeline items newest first."
-        control={
-          <Toggle
-            checked={l.invertTimeline}
-            label="Invert timeline"
-            onChange={(v) => update((s) => (s.layout.invertTimeline = v))}
           />
         }
       />
