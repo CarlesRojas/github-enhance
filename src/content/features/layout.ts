@@ -99,7 +99,6 @@ export function resetLayout(): void {
     );
     el.classList.remove(LIFTED, IN_SIDEBAR);
   });
-  setWideSidebar(false);
   document.querySelector('.js-discussion')?.removeAttribute(SIG);
 }
 
@@ -190,6 +189,12 @@ export function applyLayout(settings: Settings): void {
     return;
   }
 
+  // Widen the sidebar whenever it's shown as a column on a PR page. This is
+  // independent of whether the checks box is moved into it — the width slider
+  // controls the sidebar size on its own. Re-evaluated on every pass (incl.
+  // resize), so it turns off when the sidebar stacks at narrow widths.
+  setWideSidebar(isPRPage() && sidebarIsColumn());
+
   const checks = checksPlacement(settings);
   const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';
   const sig = `${checks}:${compose}`;
@@ -226,7 +231,6 @@ export function applyLayout(settings: Settings): void {
     if (checks === 'sidebar' && sidebar) {
       lift(mergeBox, true);
       sidebar.prepend(mergeBox);
-      setWideSidebar(true);
     } else {
       lift(mergeBox, false);
       insertAfterDescription(mergeBox, discussion, description);
