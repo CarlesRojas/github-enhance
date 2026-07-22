@@ -520,11 +520,10 @@ html[data-ghe-redesign] .ajax-pagination-form .Box {
 }
 
 /* The vertical connector lines between timeline items — drawn by Primer as
-   a 2px muted ::before strip on each item — match the card borders: same
-   color, same 1px width. */
+   a muted ::before strip on each item — take the card-border color at 2px. */
 html[data-ghe-redesign] .TimelineItem::before {
   background-color: var(--ghe-card-border) !important;
-  width: 1px !important;
+  width: 2px !important;
 }
 
 /* The actions strip below the timeline (deployments box etc.): the strip's
@@ -533,6 +532,8 @@ html[data-ghe-redesign] .TimelineItem::before {
    but keeps its own accent styling — its id-based rules win on specificity. */
 html[data-ghe-redesign] .discussion-timeline-actions {
   background-color: transparent !important;
+  /* Its thick top separator matches the connector lines: 2px, card-border. */
+  border-top: 2px solid var(--ghe-card-border) !important;
 }
 html[data-ghe-redesign] .discussion-timeline-actions .branch-action-item {
   background-color: var(--ghe-card-bg) !important;
