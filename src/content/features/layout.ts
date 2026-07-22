@@ -121,13 +121,21 @@ function findSidebar(): HTMLElement | null {
   );
 }
 
-/** True when the sidebar is rendered as a right-hand column (desktop widths). */
+/**
+ * True when the sidebar is rendered as a right-hand column (desktop widths).
+ *
+ * IMPORTANT: this must not depend on the sidebar's own geometry relative to
+ * the viewport midpoint — widening the pane moves its left edge, which made a
+ * position-based check flip its own answer and oscillate (widen → "not a
+ * column" → unwiden → "column" → …). The viewport breakpoint (Primer's lg,
+ * where PageLayout shows panes as columns) is independent of anything we do.
+ */
 function sidebarIsColumn(): boolean {
   const sidebar = findSidebar();
   if (!sidebar) return false;
   const r = sidebar.getBoundingClientRect();
-  if (r.width === 0 || r.height === 0) return false;
-  return r.left > window.innerWidth / 2;
+  if (r.width === 0 || r.height === 0) return false; // hidden (stacked/mobile)
+  return window.innerWidth >= 1012;
 }
 
 type ChecksPlacement = 'off' | 'top' | 'sidebar';
