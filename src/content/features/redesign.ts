@@ -78,12 +78,25 @@ function githubShowsControl(el: HTMLElement): boolean {
   return true;
 }
 
+/**
+ * Merged / closed PRs can't be converted to draft — detected via the overall
+ * mergeability icon's state token (purple `done` = merged, `closed` =
+ * closed), which updates live when a PR gets merged while the page is open.
+ */
+function prMergedOrClosed(): boolean {
+  return !!document.querySelector(
+    '[class*="mergeabilityIcon"][style*="done"], [class*="mergeabilityIcon"][style*="closed"]',
+  );
+}
+
 function applyDraftButton(on: boolean): void {
   const slot = document.querySelector<HTMLElement>('.' + SLOT_CLASS);
 
   // Mirror GitHub: no proxy unless GitHub currently shows the original
-  // (missing entirely on draft PRs; present but hidden on merged ones).
-  const original = on ? findDraftButton() : null;
+  // (missing entirely on draft PRs) and the PR is still open — after a live
+  // merge the inline block may linger untouched in the DOM, so the state
+  // icon is the reliable signal.
+  const original = on && !prMergedOrClosed() ? findDraftButton() : null;
   if (!original || !githubShowsControl(original)) {
     slot?.remove();
     document.querySelectorAll<HTMLElement>(`[${HIDDEN_MARK}]`).forEach(unhide);
