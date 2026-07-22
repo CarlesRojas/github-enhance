@@ -448,27 +448,20 @@ html[data-ghe-redesign] .js-resolvable-timeline-thread-container[data-resolved="
   border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
 }
 
-/* Their shaded header bar rounds to match the card's corners so its bg
-   can't overflow them — and, while collapsed, it is the card's bottom edge
-   too. Both container shapes (the container being the <details> itself, or
-   wrapping one) are covered. */
+/* Their shaded header bar (the "N resolved/outdated comments" toggle row,
+   which carries bgColor-muted + rounded-top-2) rounds to match the card's
+   corners so its bg can't overflow them. While the thread is collapsed —
+   the container only gets the .open class when expanded — the bar is also
+   the card's bottom edge, so its bottom corners round too. */
 html[data-ghe-redesign]
   .js-resolvable-timeline-thread-container[data-resolved="true"]
-  > summary,
-html[data-ghe-redesign]
-  .js-resolvable-timeline-thread-container[data-resolved="true"]
-  > details
-  > summary {
+  .js-toggle-outdated-comments {
   border-top-left-radius: calc(var(--ghe-radius) / 4 - 1px) !important;
   border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
 }
 html[data-ghe-redesign]
-  details.js-resolvable-timeline-thread-container[data-resolved="true"]:not([open])
-  > summary,
-html[data-ghe-redesign]
-  .js-resolvable-timeline-thread-container[data-resolved="true"]
-  > details:not([open])
-  > summary {
+  .js-resolvable-timeline-thread-container[data-resolved="true"]:not(.open)
+  .js-toggle-outdated-comments {
   border-bottom-left-radius: calc(var(--ghe-radius) - 1px) !important;
   border-bottom-right-radius: calc(var(--ghe-radius) - 1px) !important;
 }
