@@ -15,7 +15,37 @@ const SIG = 'data-ghe-layout';
 const MOVED = 'data-ghe-moved';
 const LIFTED = 'ghe-lifted';
 const IN_SIDEBAR = 'ghe-checks-in-sidebar';
-const WIDE = 'ghe-wide-sidebar';
+const WIDE_MARK = 'ghe-wide-target';
+
+/** Sidebar width while the checks box lives in it (default pane is 320px). */
+const SIDEBAR_WIDTH = '640px';
+const WIDE_PROPS = ['--pane-width', 'width', 'min-width', 'max-width'];
+
+/**
+ * Widen the sidebar pane. Applied as inline !important styles to both the
+ * Primer PageLayout pane and its PaneWrapper (the flex child) — injected CSS
+ * classes lose to the React layout's own styles, inline importants don't.
+ */
+function widenSidebar(): void {
+  const pane = document.querySelector<HTMLElement>(
+    '#pr-conversation-sidebar, .Layout-sidebar',
+  );
+  if (!pane) return;
+  const targets = [pane];
+  const wrap = pane.parentElement;
+  if (wrap && /PaneWrapper/i.test(wrap.className)) targets.push(wrap);
+  for (const el of targets) {
+    el.classList.add(WIDE_MARK);
+    WIDE_PROPS.forEach((p) => el.style.setProperty(p, SIDEBAR_WIDTH, 'important'));
+  }
+}
+
+function unwidenSidebar(): void {
+  document.querySelectorAll<HTMLElement>('.' + WIDE_MARK).forEach((el) => {
+    WIDE_PROPS.forEach((p) => el.style.removeProperty(p));
+    el.classList.remove(WIDE_MARK);
+  });
+}
 
 interface Movable extends HTMLElement {
   __ghePlaceholder?: Comment;
@@ -63,7 +93,7 @@ export function resetLayout(): void {
     );
     el.classList.remove(LIFTED, IN_SIDEBAR);
   });
-  document.documentElement.classList.remove(WIDE);
+  unwidenSidebar();
   document.querySelector('.js-discussion')?.removeAttribute(SIG);
 }
 
@@ -143,7 +173,11 @@ export function applyLayout(settings: Settings): void {
   const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';
   const sig = `${checks}:${compose}`;
   const current = discussion.getAttribute(SIG) ?? 'off:off';
-  if (current === sig) return;
+  if (current === sig) {
+    // Re-assert the widened pane — React re-renders can wipe inline styles.
+    if (checks === 'sidebar') widenSidebar();
+    return;
+  }
 
   // Reconcile from a clean slate every time the desired arrangement changes.
   resetLayout();
@@ -175,7 +209,7 @@ export function applyLayout(settings: Settings): void {
     if (checks === 'sidebar' && sidebar) {
       lift(mergeBox, true);
       sidebar.prepend(mergeBox);
-      document.documentElement.classList.add(WIDE);
+      widenSidebar();
     } else {
       lift(mergeBox, false);
       insertAfterDescription(mergeBox, discussion, description);

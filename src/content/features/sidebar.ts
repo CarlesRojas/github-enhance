@@ -63,6 +63,50 @@ function locate(sec: SidebarSectionDef): HTMLElement[] {
   return [...found];
 }
 
+const STICKY_MARK = 'ghe-sticky-target';
+const STICKY_PROPS = ['position', 'top', 'max-height', 'overflow-y', 'align-self'];
+
+/**
+ * The element to make sticky: the Primer PageLayout pane wrapper (the actual
+ * flex child next to the tall main column), falling back to the pane itself or
+ * the classic .Layout-sidebar.
+ */
+function stickyTarget(): HTMLElement | null {
+  const pane = document.querySelector<HTMLElement>(
+    '#pr-conversation-sidebar, .Layout-sidebar',
+  );
+  if (!pane) return null;
+  const wrap = pane.parentElement;
+  return wrap && /PaneWrapper/i.test(wrap.className) ? wrap : pane;
+}
+
+/**
+ * Sticky is applied as inline styles with !important — the Primer React layout
+ * both out-specificities injected classes and re-renders over them, so a class
+ * based approach silently does nothing. Inline importants always win, and the
+ * mutation observer re-runs this pass if React replaces the node.
+ */
+function applySticky(on: boolean): void {
+  const target = on ? stickyTarget() : null;
+
+  document.querySelectorAll<HTMLElement>('.' + STICKY_MARK).forEach((el) => {
+    if (el !== target) {
+      STICKY_PROPS.forEach((p) => el.style.removeProperty(p));
+      el.classList.remove(STICKY_MARK);
+    }
+  });
+  if (!target) return;
+
+  target.classList.add(STICKY_MARK);
+  target.style.setProperty('position', 'sticky', 'important');
+  target.style.setProperty('top', '16px', 'important');
+  target.style.setProperty('max-height', 'calc(100vh - 32px)', 'important');
+  target.style.setProperty('overflow-y', 'auto', 'important');
+  // Keep the flex child from stretching to the row's full height, which would
+  // leave sticky no room to travel.
+  target.style.setProperty('align-self', 'flex-start', 'important');
+}
+
 function setVisible(el: HTMLElement, visible: boolean): void {
   if (visible) {
     // Only clear the inline override we set; leave any pre-existing value.
@@ -75,12 +119,7 @@ function setVisible(el: HTMLElement, visible: boolean): void {
 }
 
 export function applySidebar(settings: Settings): void {
-  // Sticky sidebar — applied to the sidebar pane (the flex child). The Primer
-  // PageLayout pane has a stable id; fall back to the classic layout column.
-  const column = document.querySelector<HTMLElement>(
-    '#pr-conversation-sidebar, .Layout-sidebar, #partial-discussion-sidebar',
-  );
-  if (column) column.classList.toggle('ghe-sidebar-sticky', settings.sidebar.sticky);
+  applySticky(settings.sidebar.sticky);
 
   if (!document.querySelector('.discussion-sidebar-item')) return;
 
