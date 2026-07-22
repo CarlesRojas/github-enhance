@@ -149,6 +149,29 @@ html[data-ghe-redesign]
   padding-right: 0 !important;
 }
 
+/* 4. "Convert to draft" relocated: its original block is hidden by the
+   content script and this proxy sits at the checks card's bottom-right. */
+html[data-ghe-redesign] .ghe-draft-slot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 12px 12px;
+}
+html[data-ghe-redesign] .ghe-draft-btn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border: 1px solid var(--ghe-card-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+  cursor: pointer;
+}
+html[data-ghe-redesign] .ghe-draft-btn:hover {
+  background: var(--bgColor-muted, var(--color-canvas-subtle, #f6f8fa));
+  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+}
+
 /* Its internal separators pick up the same border color. */
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-bottom,
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-top,
