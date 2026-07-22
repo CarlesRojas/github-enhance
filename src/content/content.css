@@ -266,12 +266,17 @@ html[data-ghe-redesign] .ghe-draft-btn:active {
   background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #e7ebef));
 }
 
-/* Its internal separators pick up the same border color. */
+/* Its internal separators pick up the same border color. The outer card
+   itself also carries a borderColor-* utility class, so it is excluded here —
+   otherwise this rule (same specificity, later in the file) overrides the
+   card's state accent border. */
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-bottom,
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-top,
-html[data-ghe-redesign] [data-testid="mergebox-partial"] [class*="borderColor"],
+html[data-ghe-redesign] [data-testid="mergebox-partial"] [class*="borderColor"]:not(.border),
 html[data-ghe-redesign] #partial-pull-merging .border-bottom,
 html[data-ghe-redesign] #partial-pull-merging .border-top,
-html[data-ghe-redesign] #partial-pull-merging [class*="color-border"] {
+html[data-ghe-redesign]
+  #partial-pull-merging
+  [class*="color-border"]:not(.border):not(.branch-action-item) {
   border-color: var(--ghe-card-border) !important;
 }
