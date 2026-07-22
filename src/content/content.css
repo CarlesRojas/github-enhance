@@ -122,3 +122,23 @@ html[data-ghe-redesign] .discussion-sidebar-item {
   padding: 12px !important;
   margin-bottom: 8px;
 }
+
+/* 3. Checks / merge box as a card: same bg, radius, and border color on its
+   outer bordered container (React mergebox and classic markup alike). */
+html[data-ghe-redesign] [data-testid="mergebox-partial"] .border,
+html[data-ghe-redesign] #partial-pull-merging .border,
+html[data-ghe-redesign] #partial-pull-merging .branch-action-item {
+  background-color: var(--ghe-card-bg) !important;
+  border-color: var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+}
+
+/* Its internal separators pick up the same border color. */
+html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-bottom,
+html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-top,
+html[data-ghe-redesign] [data-testid="mergebox-partial"] [class*="borderColor"],
+html[data-ghe-redesign] #partial-pull-merging .border-bottom,
+html[data-ghe-redesign] #partial-pull-merging .border-top,
+html[data-ghe-redesign] #partial-pull-merging [class*="color-border"] {
+  border-color: var(--ghe-card-border) !important;
+}
