@@ -30,3 +30,30 @@
   font: inherit;
   color: inherit;
 }
+
+/* Checks box moved into the sidebar: hide its left status icon (GitHub already
+   hides it on mobile) so the box reads cleanly in the narrow column. */
+.ghe-checks-in-sidebar .branch-action-item-icon,
+.ghe-checks-in-sidebar .completeness-indicator,
+.ghe-checks-in-sidebar .TimelineItem-badge,
+.ghe-checks-in-sidebar .merge-status-icon {
+  display: none !important;
+}
+
+/* Sticky sidebar: keep it in view and scroll its own content, capped to the
+   viewport height. */
+.ghe-sidebar-sticky {
+  position: sticky !important;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  align-self: flex-start;
+}
+
+/* A wider sidebar when the checks box lives in it (tweakable). */
+.ghe-wide-sidebar .Layout {
+  --Layout-sidebar-width: 380px !important;
+}
+.ghe-wide-sidebar .Layout-sidebar {
+  width: 380px !important;
+}

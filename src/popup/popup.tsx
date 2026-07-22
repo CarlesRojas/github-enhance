@@ -194,6 +194,17 @@ function SidebarGroup({ settings, update }: GroupProps) {
       title="Pull Request Sidebar"
       description="Turn a section off to hide it on PR & issue pages."
     >
+      <Row
+        label="Sticky sidebar"
+        description="Keep the sidebar in view; scroll its content independently."
+        control={
+          <Toggle
+            checked={settings.sidebar.sticky}
+            label="Sticky sidebar"
+            onChange={(v) => update((s) => (s.sidebar.sticky = v))}
+          />
+        }
+      />
       {SIDEBAR_SECTIONS.map((section) => {
         const visible = settings.sidebar.sections[section.key] ?? true;
         return (

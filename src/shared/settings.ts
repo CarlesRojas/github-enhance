@@ -96,6 +96,8 @@ export interface Settings {
     hideNotices: boolean; // hide the Community Guidelines + ProTip notes
   };
   sidebar: {
+    /** Make the sidebar sticky and independently scrollable. */
+    sticky: boolean;
     /** section key -> visible (true) / hidden (false). */
     sections: Record<string, boolean>;
   };
@@ -112,6 +114,7 @@ export const DEFAULT_SETTINGS: Settings = {
     hideNotices: true,
   },
   sidebar: {
+    sticky: false,
     sections: Object.fromEntries(SIDEBAR_SECTIONS.map((s) => [s.key, true])),
   },
   hideComments: { enabled: true },
@@ -126,6 +129,7 @@ export function mergeSettings(partial: unknown): Settings {
     dates: { ...DEFAULT_SETTINGS.dates, ...(p.dates ?? {}) },
     layout: { ...DEFAULT_SETTINGS.layout, ...(p.layout ?? {}) },
     sidebar: {
+      sticky: p.sidebar?.sticky ?? DEFAULT_SETTINGS.sidebar.sticky,
       sections: { ...DEFAULT_SETTINGS.sidebar.sections, ...(p.sidebar?.sections ?? {}) },
     },
     hideComments: { ...DEFAULT_SETTINGS.hideComments, ...(p.hideComments ?? {}) },

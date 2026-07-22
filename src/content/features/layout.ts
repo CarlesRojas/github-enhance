@@ -14,6 +14,8 @@ import { Settings } from '../../shared/settings';
 const SIG = 'data-ghe-layout';
 const MOVED = 'data-ghe-moved';
 const LIFTED = 'ghe-lifted';
+const IN_SIDEBAR = 'ghe-checks-in-sidebar';
+const WIDE = 'ghe-wide-sidebar';
 
 interface Movable extends HTMLElement {
   __ghePlaceholder?: Comment;
@@ -30,13 +32,19 @@ function markOrigin(node: Movable): void {
 /**
  * Zero a moved box's desktop-only left indent (`tmp-ml-md-6` margin +
  * `tmp-pl-md-3` padding, tuned for its original spot) so it lines up with the
- * column it's moved into. Inline `!important` is required to beat the
- * utilities' own `!important`.
+ * column it's moved into. In the sidebar also drop its vertical margins (it
+ * sits flush at the top) and flag it so its left status icon can be hidden.
+ * Inline `!important` is required to beat the utilities' own `!important`.
  */
-function lift(el: HTMLElement): void {
+function lift(el: HTMLElement, inSidebar: boolean): void {
   el.classList.add(LIFTED);
   el.style.setProperty('margin-left', '0', 'important');
   el.style.setProperty('padding-left', '0', 'important');
+  if (inSidebar) {
+    el.classList.add(IN_SIDEBAR);
+    el.style.setProperty('margin-top', '0', 'important');
+    el.style.setProperty('margin-bottom', '0', 'important');
+  }
 }
 
 export function resetLayout(): void {
@@ -50,10 +58,12 @@ export function resetLayout(): void {
     node.removeAttribute(MOVED);
   });
   document.querySelectorAll<HTMLElement>('.' + LIFTED).forEach((el) => {
-    el.style.removeProperty('margin-left');
-    el.style.removeProperty('padding-left');
-    el.classList.remove(LIFTED);
+    ['margin-left', 'padding-left', 'margin-top', 'margin-bottom'].forEach((p) =>
+      el.style.removeProperty(p),
+    );
+    el.classList.remove(LIFTED, IN_SIDEBAR);
   });
+  document.documentElement.classList.remove(WIDE);
   document.querySelector('.js-discussion')?.removeAttribute(SIG);
 }
 
@@ -156,16 +166,18 @@ export function applyLayout(settings: Settings): void {
   // Compose first, then checks after the description, so checks sits above it.
   if (safe(composeBox)) {
     markOrigin(composeBox);
-    lift(composeBox);
+    lift(composeBox, false);
     insertAfterDescription(composeBox, discussion, description);
   }
 
   if (safe(mergeBox)) {
     markOrigin(mergeBox);
-    lift(mergeBox);
     if (checks === 'sidebar' && sidebar) {
+      lift(mergeBox, true);
       sidebar.prepend(mergeBox);
+      document.documentElement.classList.add(WIDE);
     } else {
+      lift(mergeBox, false);
       insertAfterDescription(mergeBox, discussion, description);
     }
   }

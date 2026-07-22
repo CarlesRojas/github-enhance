@@ -75,6 +75,12 @@ function setVisible(el: HTMLElement, visible: boolean): void {
 }
 
 export function applySidebar(settings: Settings): void {
+  // Sticky sidebar — applied to the sidebar column when present.
+  const column = document.querySelector<HTMLElement>(
+    '.Layout-sidebar, #partial-discussion-sidebar',
+  );
+  if (column) column.classList.toggle('ghe-sidebar-sticky', settings.sidebar.sticky);
+
   if (!document.querySelector('.discussion-sidebar-item')) return;
 
   for (const sec of SIDEBAR_SECTIONS) {
