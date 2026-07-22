@@ -361,3 +361,30 @@ html[data-ghe-redesign]
   [role="tab"][aria-selected="true"]:hover {
   background-color: var(--ghe-selected-hover-bg) !important;
 }
+
+/* 6. Timeline comments (the PR description and every conversation comment)
+   as cards: same bg, border, and radius as the other cards. The top-left
+   corner — the one nearest the author's avatar — keeps a quarter of the
+   radius. */
+html[data-ghe-redesign] .timeline-comment {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+  border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
+}
+
+/* The speech caret pointing at the avatar (drawn with pseudo-elements on
+   the bubble's top-left edge) is gone. */
+html[data-ghe-redesign] .timeline-comment--caret::before,
+html[data-ghe-redesign] .timeline-comment--caret::after {
+  display: none !important;
+}
+
+/* The header's own top rounding follows the card's new corners, so its
+   shaded background can't paint square corners over the rounded card.
+   (-1px keeps it inside the card's 1px border; overflow:hidden is not an
+   option here — it would clip the header's dropdown menus.) */
+html[data-ghe-redesign] .timeline-comment .timeline-comment-header {
+  border-top-left-radius: calc(var(--ghe-radius) / 4 - 1px) !important;
+  border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
