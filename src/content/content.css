@@ -34,8 +34,10 @@
 /* When the deployments box is lifted above an inverted timeline, just move its
    divider from the top to the bottom. Its own margins are left untouched, so
    the gap stays the same as in its original position. */
-.ghe-deploy-top {
+.ghe-deploy-top, .branch-action.ghe-deploy-top {
   border-top: 0 !important;
-  border-bottom: 1px solid
+  margin-bottom: 0 !important;
+  padding-bottom: var(--base-size-16, 16px) !important;
+  border-bottom: 2px solid
     var(--borderColor-muted, var(--color-border-muted, #d8dee4)) !important;
 }
