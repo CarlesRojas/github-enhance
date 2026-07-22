@@ -49,3 +49,56 @@ ProTip notices, and set the sidebar and page width with sliders.
 🔒 Privacy
 Runs only on github.com and stores only your settings, synced by your browser.
 No accounts, no tracking, no external servers, no data collection.
+
+## Privacy practices (answers for the store form)
+
+**Single purpose**
+
+Visually enhance the GitHub website.
+
+**`storage` justification**
+
+The storage permission saves the user's own configuration: which features are
+enabled and their options (such as date and time format, hidden sidebar
+sections, and sidebar and page width). It uses chrome.storage.sync so these
+settings persist between sessions and sync across the user's devices. Only the
+user's preferences are stored. No page content or personal data is stored, and
+nothing is sent off the device.
+
+**Host permission justification** (`https://github.com/*`)
+
+The extension's single purpose is to visually enhance GitHub, so its content
+script and styles must run on GitHub pages. The https://github.com/* match lets
+the content script read and restyle the current GitHub page (for example
+reformat dates, hide sidebar sections, and apply the pull request redesign).
+Access is limited to github.com only. The extension does not run on, read, or
+send data to any other site, and makes no network requests.
+
+**Are you using remote code?**
+
+No, I am not using remote code.
+
+Justification (if asked): All JavaScript and CSS are bundled in the extension
+package. It loads no external scripts, uses no eval() or new Function(), and
+never fetches or executes remote code.
+
+**Data usage**
+
+Check none of the boxes. The extension does not collect or transmit any user
+data. It only reads the current GitHub page locally to change its appearance and
+stores the user's own settings with chrome.storage. Nothing leaves the device.
+
+Certify all three disclosures (all are true):
+- I do not sell or transfer user data to third parties, outside of the approved
+  use cases.
+- I do not use or transfer user data for purposes unrelated to my item's single
+  purpose.
+- I do not use or transfer user data to determine creditworthiness or for
+  lending purposes.
+
+**Privacy policy URL**
+
+https://github.com/CarlesRojas/github-enhance/blob/main/PRIVACY.md
+
+(Works once `PRIVACY.md` is on the default branch. A rendered GitHub markdown
+page is an acceptable privacy policy URL.)
