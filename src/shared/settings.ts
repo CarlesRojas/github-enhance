@@ -109,7 +109,7 @@ export const DEFAULT_SETTINGS: Settings = {
     checksTop: false,
     composeTop: false,
     invertTimeline: false,
-    hideNotices: false,
+    hideNotices: true,
   },
   sidebar: {
     sections: Object.fromEntries(SIDEBAR_SECTIONS.map((s) => [s.key, true])),
