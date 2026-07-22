@@ -88,12 +88,12 @@ html[data-ghe-redesign] {
   --ghe-page-bg: var(--bgColor-inset, var(--color-canvas-inset, #f6f8fa));
   /* Card background — the page's original background color. */
   --ghe-card-bg: var(--bgColor-default, var(--color-canvas-default, #ffffff));
-  /* Card border — derived from the card color: slightly darker in light
-     themes… */
-  --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 92%, #000000);
+  /* Card border — light themes: a bit darker than the PAGE bg (the card is
+     white on a gray page, so it must be darker than the gray to show)… */
+  --ghe-card-border: color-mix(in srgb, var(--ghe-page-bg) 90%, #000000);
 }
 
-/* …and slightly lighter in dark themes (including "auto" resolving dark). */
+/* …dark themes: slightly lighter than the card (including "auto" → dark). */
 html[data-ghe-redesign][data-color-mode="dark"] {
   --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 88%, #ffffff);
 }
