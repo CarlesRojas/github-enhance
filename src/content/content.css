@@ -534,6 +534,30 @@ html[data-ghe-redesign] .TimelineItem::before {
   width: 2px !important;
 }
 
+/* The comment composer (new comment, inline replies, edit forms) as a card,
+   with its Write / Preview tabs as pills carrying the same bg, border, and
+   radius. Not overflow-hidden — the toolbar's Copilot/kebab menus overflow
+   the box on purpose. */
+html[data-ghe-redesign] .CommentBox {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+}
+/* Drop the header's own separator so the tab pills don't sit on a line. */
+html[data-ghe-redesign] .CommentBox-header {
+  border-bottom: 0 !important;
+}
+html[data-ghe-redesign] .CommentBox-header .tabnav-tabs {
+  gap: var(--ghe-gap);
+}
+html[data-ghe-redesign] .CommentBox-header .tabnav-tab {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+  /* Primer overlaps the tab onto the header border by -1px; reset it. */
+  margin-bottom: 0 !important;
+}
+
 /* The actions strip below the timeline (deployments box etc.): the strip's
    own background gives way to the page, and the box inside it is a card.
    The classic checks box (#partial-pull-merging) also lives in this strip
