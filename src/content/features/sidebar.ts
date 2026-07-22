@@ -75,9 +75,10 @@ function setVisible(el: HTMLElement, visible: boolean): void {
 }
 
 export function applySidebar(settings: Settings): void {
-  // Sticky sidebar — applied to the sidebar column when present.
+  // Sticky sidebar — applied to the sidebar pane (the flex child). The Primer
+  // PageLayout pane has a stable id; fall back to the classic layout column.
   const column = document.querySelector<HTMLElement>(
-    '.Layout-sidebar, #partial-discussion-sidebar',
+    '#pr-conversation-sidebar, .Layout-sidebar, #partial-discussion-sidebar',
   );
   if (column) column.classList.toggle('ghe-sidebar-sticky', settings.sidebar.sticky);
 

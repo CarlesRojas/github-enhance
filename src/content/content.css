@@ -42,16 +42,25 @@
 }
 
 /* Sticky sidebar: keep it in view and scroll its own content, capped to the
-   viewport height. */
+   viewport height. align-self keeps it from stretching to the full row height
+   (which would leave no room to stick). */
 .ghe-sidebar-sticky {
   position: sticky !important;
   top: 1rem;
   max-height: calc(100vh - 2rem);
   overflow-y: auto;
-  align-self: flex-start;
+  align-self: flex-start !important;
 }
 
-/* A wider sidebar when the checks box lives in it (tweakable). */
+/* A wider sidebar when the checks box lives in it (tweak the 380px). Covers the
+   new Primer PageLayout pane and the classic Layout sidebar. */
+.ghe-wide-sidebar #pr-conversation-sidebar,
+.ghe-wide-sidebar [class*="prc-PageLayout-Pane"] {
+  --pane-width: 380px !important;
+  width: 380px !important;
+  min-width: 380px !important;
+  max-width: 380px !important;
+}
 .ghe-wide-sidebar .Layout {
   --Layout-sidebar-width: 380px !important;
 }
