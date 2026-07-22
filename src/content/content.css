@@ -1,0 +1,32 @@
+/* Styles injected into GitHub pages for elements the extension adds. */
+
+.ghe-hide-btn {
+  display: inline-block;
+  margin: 0 6px 0 0;
+  padding: 0 4px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.ghe-hide-btn:hover:not(:disabled) {
+  color: var(--fgColor-accent, var(--color-accent-fg, #0969da));
+  text-decoration: underline;
+}
+
+.ghe-hide-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* The absolute-date span inherits GitHub's own typography so it blends in. */
+.ghe-date {
+  font: inherit;
+  color: inherit;
+}
