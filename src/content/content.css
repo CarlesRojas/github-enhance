@@ -93,6 +93,24 @@ html[data-ghe-redesign] {
   /* Card border — light themes: a bit darker than the PAGE bg (the card is
      white on a gray page, so it must be darker than the gray to show)… */
   --ghe-card-border: color-mix(in srgb, var(--ghe-page-bg) 90%, #000000);
+  /* Hover shade for interactive cards — a hint of the foreground mixed into
+     the card bg, so it darkens on light themes and lightens on dark ones. */
+  --ghe-card-hover-bg: color-mix(
+    in srgb,
+    var(--ghe-card-bg) 92%,
+    var(--fgColor-default, var(--color-fg-default, #1f2328))
+  );
+  /* Highlighted (selected) card: accent-tinted bg with an accent border. */
+  --ghe-selected-bg: var(--bgColor-accent-muted, var(--color-accent-subtle, #ddf4ff));
+  --ghe-selected-border: var(
+    --borderColor-accent-emphasis,
+    var(--color-accent-emphasis, #0969da)
+  );
+  --ghe-selected-hover-bg: color-mix(
+    in srgb,
+    var(--ghe-selected-bg) 92%,
+    var(--fgColor-default, var(--color-fg-default, #1f2328))
+  );
 }
 
 /* …dark themes: slightly lighter than the card (including "auto" → dark). */
@@ -287,4 +305,49 @@ html[data-ghe-redesign]
   #partial-pull-merging
   [class*="color-border"]:not(.border):not(.branch-action-item) {
   border-color: var(--ghe-card-border) !important;
+}
+
+/* 5. Header navigation tabs (Conversation / Commits / Checks / Files changed)
+   as pill cards. Scoped to the PR header's TabNav via its stable
+   data-component; the hashed prc-TabNav-* class names are matched by prefix
+   only. The tabs are the only [role="tab"] elements inside it. */
+
+/* The nav and tablist lose their bottom border / underline entirely. */
+html[data-ghe-redesign] [data-component="PH_Navigation"] nav[class*="prc-TabNav"],
+html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tablist"] {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tablist"] {
+  gap: var(--ghe-gap);
+}
+
+/* Each tab is a card: same bg, border, and radius as the sidebar cards.
+   The border replaces the selected tab's top/side border, and the -1px
+   bottom margin (which overlapped the now-removed nav border) is reset. */
+html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tab"] {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+  margin-bottom: 0 !important;
+  box-shadow: none !important;
+}
+html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tab"]:hover {
+  background-color: var(--ghe-card-hover-bg) !important;
+  text-decoration: none;
+}
+
+/* The selected tab is highlighted: accent-tinted bg + accent border.
+   aria-selected is the stable signal (the .selected class is hash-adjacent
+   and GitHub keeps it in sync with the attribute anyway). */
+html[data-ghe-redesign]
+  [data-component="PH_Navigation"]
+  [role="tab"][aria-selected="true"] {
+  background-color: var(--ghe-selected-bg) !important;
+  border-color: var(--ghe-selected-border) !important;
+}
+html[data-ghe-redesign]
+  [data-component="PH_Navigation"]
+  [role="tab"][aria-selected="true"]:hover {
+  background-color: var(--ghe-selected-hover-bg) !important;
 }
