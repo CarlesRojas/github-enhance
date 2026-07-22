@@ -95,8 +95,11 @@ html[data-ghe-redesign] {
   --ghe-radius: 16px;
   /* Vertical gap between sidebar cards. */
   --ghe-gap: 8px;
-  /* Page background — the header's background color. */
-  --ghe-page-bg: var(--bgColor-inset, var(--color-canvas-inset, #f6f8fa));
+  /* Page background — the header's background color, nudged a touch darker
+     on light themes (the dark-theme overrides below reset it to the plain
+     token). */
+  --ghe-page-bg-base: var(--bgColor-inset, var(--color-canvas-inset, #f6f8fa));
+  --ghe-page-bg: color-mix(in srgb, var(--ghe-page-bg-base) 96%, #000000);
   /* Card background — the page's original background color. */
   --ghe-card-bg: var(--bgColor-default, var(--color-canvas-default, #ffffff));
   /* Card border — light themes: a bit darker than the PAGE bg (the card is
@@ -125,12 +128,15 @@ html[data-ghe-redesign] {
   );
 }
 
-/* …dark themes: slightly lighter than the card (including "auto" → dark). */
+/* …dark themes: slightly lighter than the card (including "auto" → dark),
+   and the page bg stays the plain token — only light themes darken it. */
 html[data-ghe-redesign][data-color-mode="dark"] {
+  --ghe-page-bg: var(--ghe-page-bg-base);
   --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 88%, #ffffff);
 }
 @media (prefers-color-scheme: dark) {
   html[data-ghe-redesign][data-color-mode="auto"] {
+    --ghe-page-bg: var(--ghe-page-bg-base);
     --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 88%, #ffffff);
   }
 }
@@ -143,6 +149,18 @@ html[data-ghe-redesign] body {
 html[data-ghe-redesign] .application-main,
 html[data-ghe-redesign] main {
   background: transparent !important;
+}
+
+/* On light themes the darkened page bg is painted onto the site header too,
+   so the two keep matching. Dark themes leave the header alone — there the
+   page bg already equals the header's own. */
+html[data-ghe-redesign][data-color-mode="light"] .AppHeader {
+  background-color: var(--ghe-page-bg) !important;
+}
+@media (prefers-color-scheme: light) {
+  html[data-ghe-redesign][data-color-mode="auto"] .AppHeader {
+    background-color: var(--ghe-page-bg) !important;
+  }
 }
 
 /* 2. Sidebar sections as rounded cards: separators replaced by a uniform
