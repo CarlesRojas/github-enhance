@@ -133,6 +133,13 @@ html[data-ghe-redesign] #partial-pull-merging .branch-action-item {
   border-radius: var(--ghe-radius) !important;
 }
 
+/* The merge-action footer (the "Merge when ready" strip) loses its muted
+   background so the card reads as one surface. */
+html[data-ghe-redesign] [data-testid="mergebox-partial"] .bgColor-muted[class*="rounded-bottom"],
+html[data-ghe-redesign] #partial-pull-merging .bgColor-muted[class*="rounded-bottom"] {
+  background-color: transparent !important;
+}
+
 /* Its internal separators pick up the same border color. */
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-bottom,
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-top,
