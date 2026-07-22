@@ -140,6 +140,15 @@ html[data-ghe-redesign] #partial-pull-merging .bgColor-muted[class*="rounded-bot
   background-color: transparent !important;
 }
 
+/* The expanded checks list inside the mergebox loses its horizontal padding
+   so rows span the full card width. */
+html[data-ghe-redesign]
+  [data-testid="mergebox-partial"]
+  [class*="MergeBoxExpandable-module__expandableContent"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
 /* Its internal separators pick up the same border color. */
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-bottom,
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-top,
