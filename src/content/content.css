@@ -180,6 +180,12 @@ html[data-ghe-redesign][data-color-mode="light"] .AppHeader {
   }
 }
 
+/* The Files-changed sticky toolbar paints its own background; blend it into
+   the page background (the hashed module class is matched by prefix). */
+html[data-ghe-redesign] [class*="PullRequestFilesToolbar-module__toolbar"] {
+  background-color: var(--ghe-page-bg) !important;
+}
+
 /* 2. Sidebar sections as rounded cards: separators replaced by a uniform
    1px border, each card keeps the page's original background color. */
 html[data-ghe-redesign] .discussion-sidebar-item {
