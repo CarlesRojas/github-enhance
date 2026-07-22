@@ -594,9 +594,14 @@ html[data-ghe-redesign] .CommentBox {
   border: 1px solid var(--ghe-card-border) !important;
   border-radius: var(--ghe-radius) !important;
 }
-/* Drop the header's own separator so the tabs don't sit on a line. */
-html[data-ghe-redesign] .CommentBox-header {
+/* Drop the header's own separator so the tabs don't sit on a line, and
+   round its top corners (its background otherwise paints square corners over
+   the card's rounded top). -1px keeps it inside the card's 1px border. */
+html[data-ghe-redesign] .CommentBox-header,
+html[data-ghe-redesign] .CommentBox .tabnav {
   border-bottom: 0 !important;
+  border-top-left-radius: calc(var(--ghe-radius) - 1px) !important;
+  border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
 }
 /* Only the active tab carries the card bg + border, with its bottom left
    open (no bottom border, no bottom corners) so it reads as attached to the
