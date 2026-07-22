@@ -197,6 +197,14 @@ html[data-ghe-redesign]
   --ghe-accent: var(--bgColor-success-emphasis, var(--color-success-emphasis, #1f883d));
 }
 
+/* The confirm-merge form (commit message / description / confirm buttons)
+   also paints a muted bg over the card — flatten it so the card's tinted
+   state bg shows through. */
+html[data-ghe-redesign] [data-testid="mergebox-partial"] .bgColor-muted.rounded-2,
+html[data-ghe-redesign] #partial-pull-merging .bgColor-muted.rounded-2 {
+  background-color: transparent !important;
+}
+
 /* The merge-action footer (the "Merge when ready" strip) loses its muted
    background so the card reads as one surface. */
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .bgColor-muted[class*="rounded-bottom"],
