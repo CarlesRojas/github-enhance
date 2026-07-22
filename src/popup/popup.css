@@ -198,6 +198,25 @@ body {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--ghe-accent) 30%, transparent);
 }
 
+.slider-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-control input[type="range"] {
+  width: 110px;
+  accent-color: var(--ghe-accent);
+}
+
+.slider-value {
+  min-width: 46px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--ghe-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .preview {
   margin-top: 8px;
   padding: 8px 10px;

@@ -57,6 +57,12 @@ export const SIDEBAR_SECTIONS: SidebarSectionDef[] = [
   },
 ];
 
+/** Slider ranges. The sidebar's default pane is ~26% of the content area. */
+export const SIDEBAR_PCT_MIN = 26;
+export const SIDEBAR_PCT_MAX = 50;
+export const PAGE_WIDTH_DEFAULT = 1280; // GitHub's own max page width
+export const PAGE_WIDTH_MAX = 2560;
+
 export interface DateTimeFormat {
   key: string;
   label: string;
@@ -94,6 +100,10 @@ export interface Settings {
     checksTop: boolean;
     composeTop: boolean; // move the "Add a comment" box above the timeline
     hideNotices: boolean; // hide the Community Guidelines + ProTip notes
+    /** Sidebar width (% of the content area) while checks live in it. */
+    sidebarWidthPct: number;
+    /** Max page width in px; PAGE_WIDTH_DEFAULT means GitHub's default. */
+    pageMaxWidth: number;
   };
   sidebar: {
     /** section key -> visible (true) / hidden (false). */
@@ -110,6 +120,8 @@ export const DEFAULT_SETTINGS: Settings = {
     checksTop: false,
     composeTop: false,
     hideNotices: true,
+    sidebarWidthPct: 40,
+    pageMaxWidth: 1280,
   },
   sidebar: {
     sections: Object.fromEntries(SIDEBAR_SECTIONS.map((s) => [s.key, true])),

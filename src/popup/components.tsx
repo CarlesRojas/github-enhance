@@ -1,5 +1,5 @@
 // Small presentational building blocks for the popup.
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 
 export function Group(props: {
   title: string;
@@ -54,6 +54,41 @@ export function Toggle(props: {
       />
       <span className="slider" />
     </label>
+  );
+}
+
+export function Slider(props: {
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  suffix?: string;
+  ariaLabel?: string;
+  /** Called when the user releases the slider — not on every drag tick, to
+   * keep chrome.storage.sync writes well under its rate limits. */
+  onCommit: (value: number) => void;
+}) {
+  const [value, setValue] = useState(props.value);
+  useEffect(() => setValue(props.value), [props.value]);
+
+  return (
+    <div className="slider-control">
+      <input
+        type="range"
+        min={props.min}
+        max={props.max}
+        step={props.step ?? 1}
+        value={value}
+        aria-label={props.ariaLabel}
+        onChange={(e) => setValue(Number(e.target.value))}
+        onPointerUp={() => props.onCommit(value)}
+        onKeyUp={() => props.onCommit(value)}
+      />
+      <span className="slider-value">
+        {value}
+        {props.suffix}
+      </span>
+    </div>
   );
 }
 

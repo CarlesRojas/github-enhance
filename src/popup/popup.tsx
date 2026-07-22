@@ -4,6 +4,10 @@ import './popup.css';
 import {
   DATE_FORMATS,
   DEFAULT_SETTINGS,
+  PAGE_WIDTH_DEFAULT,
+  PAGE_WIDTH_MAX,
+  SIDEBAR_PCT_MAX,
+  SIDEBAR_PCT_MIN,
   SIDEBAR_SECTIONS,
   Settings,
   TIME_FORMATS,
@@ -12,7 +16,7 @@ import {
   saveSettings,
 } from '../shared/settings';
 import { formatDate } from '../shared/formatDate';
-import { Group, Row, Select, Toggle } from './components';
+import { Group, Row, Select, Slider, Toggle } from './components';
 
 const VERSION = chrome.runtime.getManifest().version;
 
@@ -154,6 +158,37 @@ function LayoutGroup({ settings, update }: GroupProps) {
             checked={l.checksTop}
             label="Move checks up"
             onChange={(v) => update((s) => (s.layout.checksTop = v))}
+          />
+        }
+      />
+      <Row
+        label="Sidebar width"
+        description="While checks are in the sidebar, as % of the content."
+        indented
+        disabled={!l.checksTop}
+        control={
+          <Slider
+            value={l.sidebarWidthPct}
+            min={SIDEBAR_PCT_MIN}
+            max={SIDEBAR_PCT_MAX}
+            suffix="%"
+            ariaLabel="Sidebar width"
+            onCommit={(v) => update((s) => (s.layout.sidebarWidthPct = v))}
+          />
+        }
+      />
+      <Row
+        label="Page width"
+        description="Max width of the page content."
+        control={
+          <Slider
+            value={l.pageMaxWidth}
+            min={PAGE_WIDTH_DEFAULT}
+            max={PAGE_WIDTH_MAX}
+            step={40}
+            suffix="px"
+            ariaLabel="Page width"
+            onCommit={(v) => update((s) => (s.layout.pageMaxWidth = v))}
           />
         }
       />

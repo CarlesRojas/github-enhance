@@ -9,7 +9,7 @@
 // including on resize, when the checks box hops between top and sidebar — so
 // any state restores correctly without a reload.
 
-import { Settings } from '../../shared/settings';
+import { PAGE_WIDTH_DEFAULT, Settings } from '../../shared/settings';
 
 const SIG = 'data-ghe-layout';
 const MOVED = 'data-ghe-moved';
@@ -24,9 +24,29 @@ const IN_SIDEBAR = 'ghe-checks-in-sidebar';
  * this wins statically with zero DOM writes.
  */
 const WIDE_ATTR = 'data-ghe-wide-sidebar';
+const PAGE_ATTR = 'data-ghe-page-width';
 
 function setWideSidebar(on: boolean): void {
   document.documentElement.toggleAttribute(WIDE_ATTR, on);
+}
+
+/** Set a CSS custom property on <html> only when the value actually changed. */
+function setVar(name: string, value: string | null): void {
+  const style = document.documentElement.style;
+  if (value === null) {
+    if (style.getPropertyValue(name)) style.removeProperty(name);
+  } else if (style.getPropertyValue(name) !== value) {
+    style.setProperty(name, value);
+  }
+}
+
+/** Publish the slider values as CSS variables consumed by content.css. */
+function applyWidthVars(settings: Settings): void {
+  setVar('--ghe-sidebar-width', `${settings.layout.sidebarWidthPct}%`);
+
+  const wider = settings.layout.pageMaxWidth > PAGE_WIDTH_DEFAULT;
+  document.documentElement.toggleAttribute(PAGE_ATTR, wider);
+  setVar('--ghe-page-max-width', wider ? `${settings.layout.pageMaxWidth}px` : null);
 }
 
 interface Movable extends HTMLElement {
@@ -156,6 +176,8 @@ function insertAfterDescription(
 }
 
 export function applyLayout(settings: Settings): void {
+  applyWidthVars(settings);
+
   const discussion = document.querySelector<HTMLElement>('.js-discussion');
   if (!discussion) return;
 

@@ -42,20 +42,30 @@
 }
 
 /* Wider sidebar while the checks box lives in it. Keyed off an attribute on
-   <html> (never touched by GitHub's React). GitHub's script sets the pane
-   width as a non-important inline style; a stylesheet !important outranks
-   that in the cascade, so this wins statically — no JS writes, no loop.
-   Tweak the 640px here (default pane is 320px). */
-html[data-ghe-wide-sidebar] #pr-conversation-sidebar,
-html[data-ghe-wide-sidebar] [class*="prc-PageLayout-PaneWrapper"] {
-  width: 640px !important;
-  min-width: 640px !important;
-  max-width: 640px !important;
-  --pane-width: 640px !important;
-}
-html[data-ghe-wide-sidebar] .Layout {
-  --Layout-sidebar-width: 640px !important;
-}
+   <html> (never touched by GitHub's React); the width comes from the
+   --ghe-sidebar-width variable the content script sets from the popup slider
+   (a % of the content area). GitHub's script sets the pane width as a
+   non-important inline style; a stylesheet !important outranks that in the
+   cascade, so this wins statically — no JS writes, no loop. The wrapper (the
+   flex child) takes the percentage; the pane fills the wrapper. */
+html[data-ghe-wide-sidebar] [class*="prc-PageLayout-PaneWrapper"],
 html[data-ghe-wide-sidebar] .Layout-sidebar {
-  width: 640px !important;
+  width: var(--ghe-sidebar-width, 40%) !important;
+  min-width: var(--ghe-sidebar-width, 40%) !important;
+  max-width: var(--ghe-sidebar-width, 40%) !important;
+}
+html[data-ghe-wide-sidebar] #pr-conversation-sidebar {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  --pane-width: 100% !important;
+}
+
+/* Wider page. Present only while the page-width slider is above GitHub's
+   default; the value comes from --ghe-page-max-width. Covers the classic
+   container and the Primer PageLayout wrappers. */
+html[data-ghe-page-width] .container-xl,
+html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutWrapper"],
+html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutRoot"] {
+  max-width: var(--ghe-page-max-width, 1280px) !important;
 }
