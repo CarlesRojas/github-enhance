@@ -9,6 +9,13 @@
 // ("Still in progress? Convert to draft") is hidden — NOT removed, so
 // GitHub's React handlers stay alive — and a proxy button in the checks
 // card's bottom-right forwards clicks to the hidden original.
+//
+// The proxy mirrors the original's state: it is shown only while GitHub
+// itself is showing the control (visibility computed while ignoring our own
+// hiding). A dedicated attribute observer keeps that in sync live — e.g.
+// when a PR gets merged while the page is open, GitHub hides the control
+// through style/attribute changes that produce no childList mutations, so
+// the main observer alone would miss the transition until a reload.
 
 import { Settings } from '../../shared/settings';
 import { isPRPage, normText } from '../util';
@@ -54,18 +61,30 @@ function unhide(el: HTMLElement): void {
   el.removeAttribute(HIDDEN_MARK);
 }
 
+/**
+ * Whether GitHub itself is currently showing the control — computed by
+ * walking up the ancestor chain and ignoring the block WE hid, so our own
+ * hiding never counts as "GitHub hid it".
+ */
+function githubShowsControl(el: HTMLElement): boolean {
+  let node: HTMLElement | null = el;
+  while (node && node !== document.documentElement) {
+    if (!node.hasAttribute(HIDDEN_MARK)) {
+      const cs = getComputedStyle(node);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+    }
+    node = node.parentElement;
+  }
+  return true;
+}
+
 function applyDraftButton(on: boolean): void {
   const slot = document.querySelector<HTMLElement>('.' + SLOT_CLASS);
 
-  if (!on) {
-    slot?.remove();
-    document.querySelectorAll<HTMLElement>(`[${HIDDEN_MARK}]`).forEach(unhide);
-    return;
-  }
-
-  // No original control (e.g. the PR is already a draft) — nothing to proxy.
-  const original = findDraftButton();
-  if (!original) {
+  // Mirror GitHub: no proxy unless GitHub currently shows the original
+  // (missing entirely on draft PRs; present but hidden on merged ones).
+  const original = on ? findDraftButton() : null;
+  if (!original || !githubShowsControl(original)) {
     slot?.remove();
     document.querySelectorAll<HTMLElement>(`[${HIDDEN_MARK}]`).forEach(unhide);
     return;
@@ -105,8 +124,42 @@ function applyDraftButton(on: boolean): void {
   box.appendChild(div);
 }
 
+// --- Live sync -------------------------------------------------------------
+// The content script's main observer only watches childList mutations, but
+// GitHub can hide/show the original control by mutating style/class/hidden
+// attributes. This dedicated observer re-evaluates the proxy on those.
+
+let lastOn = false;
+let draftObserver: MutationObserver | null = null;
+let syncQueued = false;
+
+function syncSoon(): void {
+  if (syncQueued) return;
+  syncQueued = true;
+  requestAnimationFrame(() => {
+    syncQueued = false;
+    applyDraftButton(lastOn);
+  });
+}
+
+function ensureDraftObserver(on: boolean): void {
+  if (on && !draftObserver) {
+    draftObserver = new MutationObserver(syncSoon);
+    draftObserver.observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class', 'hidden'],
+    });
+  } else if (!on && draftObserver) {
+    draftObserver.disconnect();
+    draftObserver = null;
+  }
+}
+
 export function applyRedesign(settings: Settings): void {
   const on = settings.appearance.redesign && isPRPage();
   document.documentElement.toggleAttribute(ATTR, on);
+  lastOn = on;
+  ensureDraftObserver(on);
   applyDraftButton(on);
 }
