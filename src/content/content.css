@@ -340,6 +340,7 @@ html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tab"] {
   border-radius: var(--ghe-radius) !important;
   margin-bottom: 0 !important;
   box-shadow: none !important;
+  padding: 6px 16px !important;
 }
 html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tab"]:hover {
   background-color: var(--ghe-card-hover-bg) !important;
