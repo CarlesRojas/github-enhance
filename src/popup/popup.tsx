@@ -173,6 +173,7 @@ function LayoutGroup({ settings, update }: GroupProps) {
             max={SIDEBAR_PCT_MAX}
             suffix="%"
             ariaLabel="Sidebar width"
+            disabled={!l.checksTop}
             onCommit={(v) => update((s) => (s.layout.sidebarWidthPct = v))}
           />
         }

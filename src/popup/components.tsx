@@ -64,6 +64,7 @@ export function Slider(props: {
   step?: number;
   suffix?: string;
   ariaLabel?: string;
+  disabled?: boolean;
   /** Called when the user releases the slider — not on every drag tick, to
    * keep chrome.storage.sync writes well under its rate limits. */
   onCommit: (value: number) => void;
@@ -79,6 +80,7 @@ export function Slider(props: {
         max={props.max}
         step={props.step ?? 1}
         value={value}
+        disabled={props.disabled}
         aria-label={props.ariaLabel}
         onChange={(e) => setValue(Number(e.target.value))}
         onPointerUp={() => props.onCommit(value)}
