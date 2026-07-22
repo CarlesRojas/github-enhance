@@ -186,6 +186,43 @@ html[data-ghe-redesign] [class*="PullRequestFilesToolbar-module__toolbar"] {
   background-color: var(--ghe-page-bg) !important;
 }
 
+/* Each file-changed block as a card. It's a header (rounded top) plus a
+   bordered diff-body wrapper (rounded bottom); both take the card border
+   color and the block's outer corners use our radius. Hashed module classes
+   are matched by prefix. No overflow-hidden — the header is sticky. */
+html[data-ghe-redesign] [class*="DiffFileHeader-module__diff-file-header"] {
+  border-color: var(--ghe-card-border) !important;
+  border-top-left-radius: var(--ghe-radius) !important;
+  border-top-right-radius: var(--ghe-radius) !important;
+}
+html[data-ghe-redesign] [class*="Diff-module__diff__"] .rounded-bottom-2 {
+  border-color: var(--ghe-card-border) !important;
+  border-bottom-left-radius: var(--ghe-radius) !important;
+  border-bottom-right-radius: var(--ghe-radius) !important;
+}
+/* Collapsed file: its diff body is removed, so the header is the whole card
+   and rounds its bottom corners too. */
+html[data-ghe-redesign]
+  [class*="Diff-module__diff__"]:not(:has(> .rounded-bottom-2))
+  [class*="DiffFileHeader-module__diff-file-header"] {
+  border-bottom-left-radius: var(--ghe-radius) !important;
+  border-bottom-right-radius: var(--ghe-radius) !important;
+}
+/* Targeted (clicked in the file tree): the block's border turns the muted
+   accent blue, replacing GitHub's own target highlight ring. */
+html[data-ghe-redesign] [class*="Diff-module__diffTargetable"][data-targeted="true"] {
+  box-shadow: none !important;
+}
+html[data-ghe-redesign]
+  [data-targeted="true"]
+  [class*="DiffFileHeader-module__diff-file-header"],
+html[data-ghe-redesign] [data-targeted="true"] .rounded-bottom-2 {
+  border-color: var(
+    --borderColor-accent-muted,
+    var(--color-accent-muted, #388bfd66)
+  ) !important;
+}
+
 /* 2. Sidebar sections as rounded cards: separators replaced by a uniform
    1px border, each card keeps the page's original background color. */
 html[data-ghe-redesign] .discussion-sidebar-item {
