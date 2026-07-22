@@ -131,6 +131,9 @@ html[data-ghe-redesign] #partial-pull-merging .branch-action-item {
   background-color: var(--ghe-card-bg) !important;
   border-color: var(--ghe-card-border) !important;
   border-radius: var(--ghe-radius) !important;
+  /* Clip children (e.g. the section headers' square hover backgrounds) to
+     the rounded corners. Menus/tooltips use the top layer, so they're safe. */
+  overflow: hidden;
 }
 
 /* The merge-action footer (the "Merge when ready" strip) loses its muted
