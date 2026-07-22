@@ -183,9 +183,7 @@ function LayoutGroup({ settings, update }: GroupProps) {
       />
       <Row
         label="Sidebar width"
-        description="While checks are in the sidebar, as % of the content."
-        indented
-        disabled={!l.checksTop}
+        description="Width of the PR sidebar on wide screens, as % of the content."
         control={
           <Slider
             value={l.sidebarWidthPct}
@@ -193,7 +191,6 @@ function LayoutGroup({ settings, update }: GroupProps) {
             max={SIDEBAR_PCT_MAX}
             suffix="%"
             ariaLabel="Sidebar width"
-            disabled={!l.checksTop}
             onCommit={(v) => update((s) => (s.layout.sidebarWidthPct = v))}
           />
         }
