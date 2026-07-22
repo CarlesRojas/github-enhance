@@ -190,6 +190,14 @@ html[data-ghe-redesign] [class*="PullRequestFilesToolbar-module__toolbar"] {
    bordered diff-body wrapper (rounded bottom); both take the card border
    color and the block's outer corners use our radius. Hashed module classes
    are matched by prefix. No overflow-hidden — the header is sticky. */
+
+/* The outer diff containers sit behind the header/body and paint a square
+   background that shows through the rounded corners; round them on all sides
+   to match. */
+html[data-ghe-redesign] [class*="PullRequestDiffsList-module__diffEntry"],
+html[data-ghe-redesign] [class*="Diff-module__diff__"] {
+  border-radius: var(--ghe-radius) !important;
+}
 html[data-ghe-redesign] [class*="DiffFileHeader-module__diff-file-header"] {
   border-color: var(--ghe-card-border) !important;
   border-top-left-radius: var(--ghe-radius) !important;
