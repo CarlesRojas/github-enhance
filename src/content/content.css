@@ -93,6 +93,17 @@ html[data-ghe-redesign] {
   /* Card border — light themes: a bit darker than the PAGE bg (the card is
      white on a gray page, so it must be darker than the gray to show)… */
   --ghe-card-border: color-mix(in srgb, var(--ghe-page-bg) 90%, #000000);
+  /* All-checks-green state: GitHub's success border, and the card bg pulled
+     slightly toward the success color. */
+  --ghe-success-border: var(
+    --borderColor-success-emphasis,
+    var(--color-success-emphasis, #1f883d)
+  );
+  --ghe-success-bg: color-mix(
+    in srgb,
+    var(--ghe-card-bg) 94%,
+    var(--bgColor-success-emphasis, var(--color-success-emphasis, #1f883d))
+  );
 }
 
 /* …dark themes: slightly lighter than the card (including "auto" → dark). */
@@ -136,6 +147,20 @@ html[data-ghe-redesign] #partial-pull-merging .branch-action-item {
   /* Clip children (e.g. the section headers' square hover backgrounds) to
      the rounded corners. Menus/tooltips use the top layer, so they're safe. */
   overflow: hidden;
+}
+
+/* When everything is green — detected via the overall mergeability icon
+   carrying the success token (or the classic clean indicator) — the card
+   takes GitHub's success border and a slight green tint. */
+html[data-ghe-redesign]
+  [data-testid="mergebox-partial"]:has([class*="mergeabilityIcon"][style*="success"])
+  .border,
+html[data-ghe-redesign]
+  #partial-pull-merging
+  .branch-action:has(.completeness-indicator-success)
+  .branch-action-item {
+  border-color: var(--ghe-success-border) !important;
+  background-color: var(--ghe-success-bg) !important;
 }
 
 /* The merge-action footer (the "Merge when ready" strip) loses its muted
