@@ -17,11 +17,36 @@ const ATTR = 'data-ghe-redesign';
 const HIDDEN_MARK = 'data-ghe-draft-hidden';
 const SLOT_CLASS = 'ghe-draft-slot';
 
-/** GitHub's own "Convert to draft" control (never our proxy). */
+/**
+ * Only these places may contain the control we relocate: the PR sidebar and
+ * the area around the checks / merge box. Never dialogs — the convert
+ * confirmation modal has its own "Convert to draft" button that must stay.
+ */
+function searchRoots(): HTMLElement[] {
+  const roots: HTMLElement[] = [];
+  for (const sel of [
+    '#pr-conversation-sidebar',
+    '#partial-discussion-sidebar',
+    '.Layout-sidebar',
+  ]) {
+    const el = document.querySelector<HTMLElement>(sel);
+    if (el) roots.push(el);
+  }
+  const merge = document.querySelector<HTMLElement>(
+    '[data-testid="mergebox-partial"], #partial-pull-merging',
+  );
+  if (merge?.parentElement) roots.push(merge.parentElement);
+  return roots;
+}
+
+/** GitHub's own "Convert to draft" control (never our proxy, never a dialog's). */
 function findDraftButton(): HTMLElement | null {
-  for (const el of document.querySelectorAll<HTMLElement>('button, summary, a')) {
-    if (el.closest('.' + SLOT_CLASS)) continue;
-    if (normText(el) === 'convert to draft') return el;
+  for (const root of searchRoots()) {
+    for (const el of root.querySelectorAll<HTMLElement>('button, summary, a')) {
+      if (el.closest('.' + SLOT_CLASS)) continue;
+      if (el.closest('[role="dialog"], [role="alertdialog"], [class*="prc-Dialog"]')) continue;
+      if (normText(el) === 'convert to draft') return el;
+    }
   }
   return null;
 }
@@ -36,16 +61,17 @@ function draftWrapper(btn: HTMLElement): HTMLElement {
   return btn.parentElement ?? btn;
 }
 
+function unhide(el: HTMLElement): void {
+  el.style.removeProperty('display');
+  el.removeAttribute(HIDDEN_MARK);
+}
+
 function applyDraftButton(on: boolean): void {
   const slot = document.querySelector<HTMLElement>('.' + SLOT_CLASS);
-  const hidden = document.querySelector<HTMLElement>(`[${HIDDEN_MARK}]`);
 
   if (!on) {
     slot?.remove();
-    if (hidden) {
-      hidden.style.removeProperty('display');
-      hidden.removeAttribute(HIDDEN_MARK);
-    }
+    document.querySelectorAll<HTMLElement>(`[${HIDDEN_MARK}]`).forEach(unhide);
     return;
   }
 
@@ -53,11 +79,16 @@ function applyDraftButton(on: boolean): void {
   const original = findDraftButton();
   if (!original) {
     slot?.remove();
+    document.querySelectorAll<HTMLElement>(`[${HIDDEN_MARK}]`).forEach(unhide);
     return;
   }
 
-  // Hide the original block along with its "Still in progress?" text.
+  // Hide the original block along with its "Still in progress?" text, and
+  // heal any stale marks (e.g. a dialog's confirm button caught previously).
   const wrapper = draftWrapper(original);
+  document.querySelectorAll<HTMLElement>(`[${HIDDEN_MARK}]`).forEach((el) => {
+    if (el !== wrapper) unhide(el);
+  });
   if (!wrapper.hasAttribute(HIDDEN_MARK)) {
     wrapper.setAttribute(HIDDEN_MARK, '');
     wrapper.style.setProperty('display', 'none', 'important');

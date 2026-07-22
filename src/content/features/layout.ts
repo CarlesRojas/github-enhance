@@ -76,9 +76,10 @@ function lift(el: HTMLElement, inSidebar: boolean): void {
   if (inSidebar) {
     el.classList.add(IN_SIDEBAR);
     el.style.setProperty('margin-top', '0', 'important');
-    // Same gap the sidebar cards keep between each other (falls back to 8px
-    // when the redesign — which defines --ghe-gap — is off).
-    el.style.setProperty('margin-bottom', 'var(--ghe-gap, 8px)', 'important');
+    // Match the visible gap between sidebar cards: their spacing stacks our
+    // --ghe-gap margin on top of GitHub's own native item spacing, so the
+    // lifted box (not a native sidebar item) needs twice the gap to line up.
+    el.style.setProperty('margin-bottom', 'calc(var(--ghe-gap, 8px) * 2)', 'important');
   }
 }
 
