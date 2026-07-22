@@ -25,6 +25,15 @@
   opacity: 0.6;
 }
 
+/* Regular comment headers lay their actions out as a centered flex row, but
+   the action bar inside a minimized comment doesn't — there the injected
+   button sat visibly lower than the kebab next to it. Make that bar a
+   centered flex row too. */
+.minimized-comment .timeline-comment-actions {
+  display: flex;
+  align-items: center;
+}
+
 /* The absolute-date span inherits GitHub's own typography so it blends in. */
 .ghe-date {
   font: inherit;
