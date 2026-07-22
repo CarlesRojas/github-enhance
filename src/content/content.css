@@ -41,6 +41,25 @@
   display: none !important;
 }
 
-/* Sticky sidebar and the widened pane are applied as inline styles from the
-   content script (see sidebar.ts / layout.ts) — the Primer React layout beats
-   injected stylesheet classes, inline !important always wins. */
+/* Sticky sidebar is applied as inline styles from the content script (see
+   sidebar.ts) — those properties aren't managed by GitHub's script, so there
+   is nothing to fight. */
+
+/* Wider sidebar while the checks box lives in it. Keyed off an attribute on
+   <html> (never touched by GitHub's React). GitHub's script sets the pane
+   width as a non-important inline style; a stylesheet !important outranks
+   that in the cascade, so this wins statically — no JS writes, no loop.
+   Tweak the 640px here (default pane is 320px). */
+html[data-ghe-wide-sidebar] #pr-conversation-sidebar,
+html[data-ghe-wide-sidebar] [class*="prc-PageLayout-PaneWrapper"] {
+  width: 640px !important;
+  min-width: 640px !important;
+  max-width: 640px !important;
+  --pane-width: 640px !important;
+}
+html[data-ghe-wide-sidebar] .Layout {
+  --Layout-sidebar-width: 640px !important;
+}
+html[data-ghe-wide-sidebar] .Layout-sidebar {
+  width: 640px !important;
+}

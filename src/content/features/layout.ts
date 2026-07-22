@@ -15,36 +15,18 @@ const SIG = 'data-ghe-layout';
 const MOVED = 'data-ghe-moved';
 const LIFTED = 'ghe-lifted';
 const IN_SIDEBAR = 'ghe-checks-in-sidebar';
-const WIDE_MARK = 'ghe-wide-target';
-
-/** Sidebar width while the checks box lives in it (default pane is 320px). */
-const SIDEBAR_WIDTH = '640px';
-const WIDE_PROPS = ['--pane-width', 'width', 'min-width', 'max-width'];
-
 /**
- * Widen the sidebar pane. Applied as inline !important styles to both the
- * Primer PageLayout pane and its PaneWrapper (the flex child) — injected CSS
- * classes lose to the React layout's own styles, inline importants don't.
+ * Widening the sidebar is done purely in CSS (see content.css), keyed off an
+ * attribute on <html> — an element GitHub's React never touches. Writing
+ * inline styles onto the pane caused a loop: GitHub's own script re-sets the
+ * pane width, we re-asserted, and the two fought forever. A stylesheet
+ * !important rule beats their non-important inline width in the cascade, so
+ * this wins statically with zero DOM writes.
  */
-function widenSidebar(): void {
-  const pane = document.querySelector<HTMLElement>(
-    '#pr-conversation-sidebar, .Layout-sidebar',
-  );
-  if (!pane) return;
-  const targets = [pane];
-  const wrap = pane.parentElement;
-  if (wrap && /PaneWrapper/i.test(wrap.className)) targets.push(wrap);
-  for (const el of targets) {
-    el.classList.add(WIDE_MARK);
-    WIDE_PROPS.forEach((p) => el.style.setProperty(p, SIDEBAR_WIDTH, 'important'));
-  }
-}
+const WIDE_ATTR = 'data-ghe-wide-sidebar';
 
-function unwidenSidebar(): void {
-  document.querySelectorAll<HTMLElement>('.' + WIDE_MARK).forEach((el) => {
-    WIDE_PROPS.forEach((p) => el.style.removeProperty(p));
-    el.classList.remove(WIDE_MARK);
-  });
+function setWideSidebar(on: boolean): void {
+  document.documentElement.toggleAttribute(WIDE_ATTR, on);
 }
 
 interface Movable extends HTMLElement {
@@ -93,7 +75,7 @@ export function resetLayout(): void {
     );
     el.classList.remove(LIFTED, IN_SIDEBAR);
   });
-  unwidenSidebar();
+  setWideSidebar(false);
   document.querySelector('.js-discussion')?.removeAttribute(SIG);
 }
 
@@ -173,11 +155,7 @@ export function applyLayout(settings: Settings): void {
   const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';
   const sig = `${checks}:${compose}`;
   const current = discussion.getAttribute(SIG) ?? 'off:off';
-  if (current === sig) {
-    // Re-assert the widened pane — React re-renders can wipe inline styles.
-    if (checks === 'sidebar') widenSidebar();
-    return;
-  }
+  if (current === sig) return;
 
   // Reconcile from a clean slate every time the desired arrangement changes.
   resetLayout();
@@ -209,7 +187,7 @@ export function applyLayout(settings: Settings): void {
     if (checks === 'sidebar' && sidebar) {
       lift(mergeBox, true);
       sidebar.prepend(mergeBox);
-      widenSidebar();
+      setWideSidebar(true);
     } else {
       lift(mergeBox, false);
       insertAfterDescription(mergeBox, discussion, description);
