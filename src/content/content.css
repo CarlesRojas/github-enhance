@@ -421,6 +421,31 @@ html[data-ghe-redesign] .js-resolvable-timeline-thread-container[data-resolved="
   border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
 }
 
+/* Their shaded header bar rounds to match the card's corners so its bg
+   can't overflow them — and, while collapsed, it is the card's bottom edge
+   too. Both container shapes (the container being the <details> itself, or
+   wrapping one) are covered. */
+html[data-ghe-redesign]
+  .js-resolvable-timeline-thread-container[data-resolved="true"]
+  > summary,
+html[data-ghe-redesign]
+  .js-resolvable-timeline-thread-container[data-resolved="true"]
+  > details
+  > summary {
+  border-top-left-radius: calc(var(--ghe-radius) / 4 - 1px) !important;
+  border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+html[data-ghe-redesign]
+  details.js-resolvable-timeline-thread-container[data-resolved="true"]:not([open])
+  > summary,
+html[data-ghe-redesign]
+  .js-resolvable-timeline-thread-container[data-resolved="true"]
+  > details:not([open])
+  > summary {
+  border-bottom-left-radius: calc(var(--ghe-radius) - 1px) !important;
+  border-bottom-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+
 /* The timeline's "N hidden items / Load more…" pagination: the <form>
    itself paints the background — it (and the buttons, which paint their own
    color-bg-default) give way to the page background. */
