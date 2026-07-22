@@ -221,20 +221,38 @@ html[data-ghe-redesign] .ghe-draft-slot {
   justify-content: flex-end;
   padding: 8px 12px 12px;
 }
+/* Styled with GitHub's default-button tokens so it matches its neighbours
+   in every native theme. */
 html[data-ghe-redesign] .ghe-draft-btn {
   font: inherit;
   font-size: 12px;
   font-weight: 500;
   padding: 4px 12px;
-  border: 1px solid var(--ghe-card-border);
+  border: 1px solid
+    var(
+      --button-default-borderColor-rest,
+      var(--borderColor-default, var(--color-border-default, #d0d7de))
+    );
   border-radius: 6px;
-  background: transparent;
-  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+  background: var(
+    --button-default-bgColor-rest,
+    var(--color-btn-bg, #f6f8fa)
+  );
+  color: var(
+    --button-default-fgColor-rest,
+    var(--fgColor-default, var(--color-btn-text, #1f2328))
+  );
   cursor: pointer;
 }
 html[data-ghe-redesign] .ghe-draft-btn:hover {
-  background: var(--bgColor-muted, var(--color-canvas-subtle, #f6f8fa));
-  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+  background: var(--button-default-bgColor-hover, var(--color-btn-hover-bg, #eff2f5));
+  border-color: var(
+    --button-default-borderColor-hover,
+    var(--borderColor-default, #d0d7de)
+  );
+}
+html[data-ghe-redesign] .ghe-draft-btn:active {
+  background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #e7ebef));
 }
 
 /* Its internal separators pick up the same border color. */
