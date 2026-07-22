@@ -137,10 +137,12 @@ html[data-ghe-redesign] #partial-pull-merging .branch-action-item {
 }
 
 /* The merge-action footer (the "Merge when ready" strip) loses its muted
-   background so the card reads as one surface. */
+   background so the card reads as one surface, and its bottom padding — the
+   relocated "Convert to draft" slot below provides the spacing instead. */
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .bgColor-muted[class*="rounded-bottom"],
 html[data-ghe-redesign] #partial-pull-merging .bgColor-muted[class*="rounded-bottom"] {
   background-color: transparent !important;
+  padding-bottom: 0 !important;
 }
 
 /* The expanded checks list inside the mergebox loses its horizontal padding
