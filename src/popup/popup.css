@@ -1,0 +1,261 @@
+:root {
+  --ghe-canvas: #ffffff;
+  --ghe-canvas-subtle: #f6f8fa;
+  --ghe-border: #d0d7de;
+  --ghe-border-muted: #d8dee4;
+  --ghe-fg: #1f2328;
+  --ghe-fg-muted: #656d76;
+  --ghe-accent: #0969da;
+  --ghe-accent-fg: #ffffff;
+  --ghe-track: #d0d7de;
+  --ghe-danger: #cf222e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ghe-canvas: #0d1117;
+    --ghe-canvas-subtle: #161b22;
+    --ghe-border: #30363d;
+    --ghe-border-muted: #21262d;
+    --ghe-fg: #e6edf3;
+    --ghe-fg-muted: #8b949e;
+    --ghe-accent: #2f81f7;
+    --ghe-accent-fg: #ffffff;
+    --ghe-track: #484f58;
+    --ghe-danger: #f85149;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 360px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  color: var(--ghe-fg);
+  background: var(--ghe-canvas);
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ghe-border);
+  background: var(--ghe-canvas-subtle);
+}
+
+.app-header .logo {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.app-header .version {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ghe-fg-muted);
+}
+
+.group {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ghe-border-muted);
+}
+
+.group:last-child {
+  border-bottom: 0;
+}
+
+.group-title {
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ghe-fg-muted);
+}
+
+.group-desc {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--ghe-fg-muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  min-height: 30px;
+}
+
+.row.indented {
+  padding-left: 12px;
+}
+
+.row.disabled {
+  opacity: 0.5;
+}
+
+.row-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.row-label {
+  font-weight: 500;
+}
+
+.row-desc {
+  margin-top: 1px;
+  font-size: 11px;
+  color: var(--ghe-fg-muted);
+}
+
+.row-control {
+  flex: 0 0 auto;
+}
+
+/* Toggle switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch .slider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background: var(--ghe-track);
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+
+.switch .slider::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  top: 2px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.15s ease;
+}
+
+.switch input:checked + .slider {
+  background: var(--ghe-accent);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(14px);
+}
+
+.switch input:disabled + .slider {
+  cursor: not-allowed;
+}
+
+/* Form controls */
+.select {
+  width: 162px;
+  max-width: 162px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ghe-fg);
+  background: var(--ghe-canvas);
+  border: 1px solid var(--ghe-border);
+  border-radius: 6px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--ghe-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ghe-accent) 30%, transparent);
+}
+
+.slider-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-control input[type="range"] {
+  width: 110px;
+  accent-color: var(--ghe-accent);
+}
+
+.slider-value {
+  min-width: 46px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--ghe-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.preview {
+  margin-top: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  background: var(--ghe-canvas-subtle);
+  border: 1px solid var(--ghe-border-muted);
+  border-radius: 6px;
+}
+
+.preview .from {
+  color: var(--ghe-fg-muted);
+  text-decoration: line-through;
+}
+
+.preview .arrow {
+  margin: 0 6px;
+  color: var(--ghe-fg-muted);
+}
+
+.preview .to {
+  font-weight: 600;
+}
+
+.hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--ghe-fg-muted);
+}
+
+.tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--ghe-fg-muted);
+  background: var(--ghe-canvas-subtle);
+  border: 1px solid var(--ghe-border-muted);
+  border-radius: 999px;
+  vertical-align: middle;
+}
