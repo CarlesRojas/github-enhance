@@ -474,10 +474,17 @@ html[data-ghe-redesign]
 }
 
 /* The timeline's "N hidden items / Load more…" pagination: the <form>
-   itself paints the background — it (and the buttons, which paint their own
-   color-bg-default) give way to the page background. */
-html[data-ghe-redesign] .ajax-pagination-form,
-html[data-ghe-redesign] .ajax-pagination-form .Box,
-html[data-ghe-redesign] .ajax-pagination-form .ajax-pagination-btn {
+   itself paints the page background, while the Box holding the buttons is
+   a card like any other. The buttons' own color-bg-default goes transparent
+   so the card shows through. */
+html[data-ghe-redesign] .ajax-pagination-form {
   background-color: var(--ghe-page-bg) !important;
+}
+html[data-ghe-redesign] .ajax-pagination-form .Box {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+}
+html[data-ghe-redesign] .ajax-pagination-form .ajax-pagination-btn {
+  background-color: transparent !important;
 }
