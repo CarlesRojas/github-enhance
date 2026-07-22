@@ -117,21 +117,15 @@ function findDeploymentsBox(): HTMLElement | null {
 }
 
 /**
- * Line up the lifted boxes' left edge with the comment / PR-description column.
- * Measured live so it beats GitHub's `!important` left-margin utilities (an
- * injected stylesheet class can't) and adapts to the current width.
+ * Lift a box into the timeline. Its `tmp-ml-md-6` (a desktop-only left margin
+ * tuned for its spot at the bottom of the merge chain) over-indents it in the
+ * comment column, so drop it — which is exactly what happens on mobile, where
+ * that `-md-` utility doesn't apply and the boxes already line up. Inline
+ * `!important` is required to beat the utility's own `!important`.
  */
-function alignLiftedBoxes(discussion: HTMLElement): void {
-  const ref = discussion.querySelector('.comment-body, .markdown-body');
-  const target = ref?.getBoundingClientRect().left ?? 0;
-  if (!target) return; // not laid out (e.g. in tests) — leave as-is
-  document.querySelectorAll<HTMLElement>('.' + LIFTED).forEach((el) => {
-    const left = el.getBoundingClientRect().left;
-    if (!left) return;
-    const currentMargin = parseFloat(getComputedStyle(el).marginLeft) || 0;
-    const aligned = Math.round(currentMargin - (left - target));
-    el.style.setProperty('margin-left', `${aligned}px`, 'important');
-  });
+function lift(el: HTMLElement): void {
+  el.classList.add(LIFTED);
+  el.style.setProperty('margin-left', '0', 'important');
 }
 
 /** Reverse grouped deployment rows within each `.merge-status-list`. */
@@ -183,11 +177,11 @@ export function applyLayout(settings: Settings): void {
   // original spot, so neutralise it to line up with the timeline's left edge.
   if (safe(mergeBox)) {
     markOrigin(mergeBox);
-    mergeBox.classList.add(LIFTED);
+    lift(mergeBox);
   }
   if (safe(composeBox)) {
     markOrigin(composeBox);
-    composeBox.classList.add(LIFTED);
+    lift(composeBox);
   }
   if (safe(mergeBox) || safe(composeBox)) {
     const top = document.createDocumentFragment();
@@ -213,6 +207,5 @@ export function applyLayout(settings: Settings): void {
     }
   }
 
-  alignLiftedBoxes(discussion);
   discussion.setAttribute(SIG, sig);
 }
