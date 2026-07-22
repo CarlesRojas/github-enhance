@@ -407,3 +407,10 @@ html[data-ghe-redesign] .js-resolvable-timeline-thread-container[data-resolved="
   border-radius: var(--ghe-radius) !important;
   border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
 }
+
+/* The timeline's "N hidden items / Load more…" pagination box: its own
+   default background gives way to the page background. */
+html[data-ghe-redesign] .ajax-pagination-form .Box,
+html[data-ghe-redesign] .ajax-pagination-form .ajax-pagination-btn {
+  background-color: var(--ghe-page-bg) !important;
+}
