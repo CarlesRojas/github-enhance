@@ -417,6 +417,12 @@ html[data-ghe-redesign] .timeline-comment {
   border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
 }
 
+/* The PR description (its .timeline-comment carries id="pullrequest-…",
+   unlike regular comments' "issuecomment-…") gets the accent border. */
+html[data-ghe-redesign] .timeline-comment[id^="pullrequest-"] {
+  border-color: var(--ghe-selected-border) !important;
+}
+
 /* The speech caret pointing at the avatar (drawn with pseudo-elements on
    the bubble's top-left edge) is gone. */
 html[data-ghe-redesign] .timeline-comment--caret::before,
