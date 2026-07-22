@@ -131,7 +131,7 @@ export const DEFAULT_SETTINGS: Settings = {
     sections: Object.fromEntries(SIDEBAR_SECTIONS.map((s) => [s.key, true])),
   },
   hideComments: { enabled: true },
-  appearance: { redesign: false },
+  appearance: { redesign: true },
 };
 
 const STORAGE_KEY = 'settings';
