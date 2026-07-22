@@ -40,11 +40,16 @@ function setVar(name: string, value: string | null): void {
   }
 }
 
+/** True on pull-request pages (conversation, files, checks tabs). */
+function isPRPage(): boolean {
+  return /^\/[^/]+\/[^/]+\/pull\/\d+/.test(location.pathname);
+}
+
 /** Publish the slider values as CSS variables consumed by content.css. */
-function applyWidthVars(settings: Settings): void {
+function applyWidthVars(settings: Settings, onPR: boolean): void {
   setVar('--ghe-sidebar-width', `${settings.layout.sidebarWidthPct}%`);
 
-  const wider = settings.layout.pageMaxWidth > PAGE_WIDTH_DEFAULT;
+  const wider = onPR && settings.layout.pageMaxWidth > PAGE_WIDTH_DEFAULT;
   document.documentElement.toggleAttribute(PAGE_ATTR, wider);
   setVar('--ghe-page-max-width', wider ? `${settings.layout.pageMaxWidth}px` : null);
 }
@@ -176,10 +181,15 @@ function insertAfterDescription(
 }
 
 export function applyLayout(settings: Settings): void {
-  applyWidthVars(settings);
+  applyWidthVars(settings, isPRPage());
 
   const discussion = document.querySelector<HTMLElement>('.js-discussion');
-  if (!discussion) return;
+  if (!discussion) {
+    // GitHub navigates without full reloads, so attributes on <html> survive
+    // leaving the PR page — clear them or other pages' sidebars get widened.
+    setWideSidebar(false);
+    return;
+  }
 
   const checks = checksPlacement(settings);
   const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';

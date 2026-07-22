@@ -48,8 +48,11 @@
    non-important inline style; a stylesheet !important outranks that in the
    cascade, so this wins statically — no JS writes, no loop. The wrapper (the
    flex child) takes the percentage; the pane fills the wrapper. */
-html[data-ghe-wide-sidebar] [class*="prc-PageLayout-PaneWrapper"],
-html[data-ghe-wide-sidebar] .Layout-sidebar {
+/* :has() pins these to the PR conversation sidebar specifically, so sidebars
+   on other pages (file tree, issues, settings…) can never match. */
+html[data-ghe-wide-sidebar]
+  [class*="prc-PageLayout-PaneWrapper"]:has(#pr-conversation-sidebar),
+html[data-ghe-wide-sidebar] .Layout-sidebar:has(#partial-discussion-sidebar) {
   width: var(--ghe-sidebar-width, 40%) !important;
   min-width: var(--ghe-sidebar-width, 40%) !important;
   max-width: var(--ghe-sidebar-width, 40%) !important;
