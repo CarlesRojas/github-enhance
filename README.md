@@ -19,10 +19,10 @@ Replaces relative dates everywhere GitHub shows them (“yesterday”, “last
 week”, …) with an absolute date & time.
 
 - **Toggle** to turn the feature on/off.
-- **Format** presets (ISO, US, EU, long, date-only) plus a **Custom** pattern.
-  - Tokens: `YYYY YY MM M DD D HH H hh h mm m ss s`, month names `MMM/MMMM`,
-    weekday `ddd/dddd`, `A`/`a` for AM/PM. Wrap literal text in `[brackets]`,
-    e.g. `YYYY-MM-DD [at] HH:mm`.
+- **Date format** dropdown (ISO, `Jul 22, 2026`, `07/22/2026`, `22 Jul 2026`,
+  weekday variants…).
+- **Time format** dropdown (24-hour, 12-hour, with/without seconds, or
+  **No time** for date-only).
 - Live preview in the popup.
 
 The original `<relative-time>` element is only hidden (not destroyed) and a
@@ -33,11 +33,14 @@ native behavior instantly — no reload.
 
 Hide sidebar sections you don’t use on PR/issue pages.
 
-- A master toggle for the feature, then a per-section toggle for **Reviewers,
-  Assignees, Labels, Projects, Milestone, Development, Notifications,
-  Participants**.
-- Sections are matched by their heading text, so this keeps working when GitHub
-  reorders them. Re-enabling a section restores it without a reload.
+- One independent toggle per section — **Reviewers, Assignees, Labels,
+  Projects, Milestone, Development, Notifications, Participants, Lock
+  conversation** — all shown by default; turn one off to hide it.
+- Sections are matched by known container selectors and heading text, so this
+  keeps working when GitHub reorders them. Re-enabling a section restores it
+  without a reload.
+- *Projects* only appears on repos with Projects enabled. *Lock conversation*
+  hides just that control, not a neighbouring Pin button.
 
 ### 3. Comments — Hide as outdated
 

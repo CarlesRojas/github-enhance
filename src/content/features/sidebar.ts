@@ -1,46 +1,74 @@
 // Feature 2: show/hide individual sections in the right-hand sidebar of a
 // pull-request / issue page (Reviewers, Assignees, Labels, Projects,
-// Milestone, Development, Notifications, Participants).
+// Milestone, Development, Notifications, Participants, Lock conversation).
 //
-// Sections are matched by their heading text so this keeps working even when
-// GitHub reorders them. Hiding is reconciled on every pass, so toggling a
-// section back on in the popup restores it without a reload.
+// Each section toggle is independent (no master switch) and defaults to shown,
+// so nothing is hidden until you turn a section off.
+//
+// Sections are located three ways, most-specific first:
+//   1. Known container selectors (e.g. #partial-users-participants).
+//   2. A titled section whose heading text matches (Reviewers, Milestone…).
+//   3. An action control whose button/link text matches ("Lock conversation").
+// Hiding is reconciled every pass, so re-enabling a section restores it.
 
-import { Settings, SIDEBAR_SECTIONS } from '../../shared/settings';
+import { Settings, SidebarSectionDef, SIDEBAR_SECTIONS } from '../../shared/settings';
 import { normText } from '../util';
 
-const MARK = 'data-ghe-section';
+function blockFor(el: HTMLElement, tight: boolean): HTMLElement {
+  if (tight) {
+    return (
+      el.closest<HTMLElement>('p, li') ||
+      el.closest<HTMLElement>('.discussion-sidebar-item') ||
+      el
+    );
+  }
+  return el.closest<HTMLElement>('.discussion-sidebar-item') || el;
+}
 
-function findSidebar(): HTMLElement | null {
-  return (
-    document.querySelector<HTMLElement>('#partial-discussion-sidebar') ||
-    document.querySelector<HTMLElement>('.Layout-sidebar')
-  );
+function locate(sec: SidebarSectionDef): HTMLElement[] {
+  const found = new Set<HTMLElement>();
+
+  for (const selector of sec.containers ?? []) {
+    document
+      .querySelectorAll<HTMLElement>(selector)
+      .forEach((el) => found.add(blockFor(el, !!sec.tight)));
+  }
+
+  // For action controls (tight) scan buttons/links; for titled sections scan
+  // heading-like elements only, to avoid matching stray control text.
+  const headingSelector = sec.tight
+    ? 'button, summary, a, .btn-link'
+    : '.discussion-sidebar-heading, summary, h3, h2, .text-bold';
+
+  document.querySelectorAll<HTMLElement>('.discussion-sidebar-item').forEach((item) => {
+    let matched: HTMLElement | null = null;
+    for (const el of item.querySelectorAll<HTMLElement>(headingSelector)) {
+      const text = normText(el);
+      if (text && sec.match.some((m) => text.includes(m))) {
+        matched = el;
+        break;
+      }
+    }
+    if (!matched && !sec.tight) {
+      const text = normText(item);
+      if (text && sec.match.some((m) => text.includes(m))) matched = item;
+    }
+    if (matched) found.add(blockFor(sec.tight ? matched : item, !!sec.tight));
+  });
+
+  return [...found];
+}
+
+function setVisible(el: HTMLElement, visible: boolean): void {
+  const desired = visible ? '' : 'none';
+  if (el.style.display !== desired) el.style.display = desired;
 }
 
 export function applySidebar(settings: Settings): void {
-  const sidebar = findSidebar();
-  if (!sidebar) return;
+  if (!document.querySelector('.discussion-sidebar-item')) return;
 
-  const items = sidebar.querySelectorAll<HTMLElement>('.discussion-sidebar-item');
-  items.forEach((item) => {
-    const heading = item.querySelector('.discussion-sidebar-heading, h3, h2');
-    const text = normText(heading) || normText(item.firstElementChild);
-    if (!text) return;
-
-    const section = SIDEBAR_SECTIONS.find((s) =>
-      s.match.some((m) => text.startsWith(m)),
-    );
-    if (!section) return;
-
-    item.setAttribute(MARK, section.key);
-
-    // When the feature is off, everything is visible (restore).
-    const visible = !settings.sidebar.enabled
-      ? true
-      : settings.sidebar.sections[section.key] ?? true;
-
-    const desired = visible ? '' : 'none';
-    if (item.style.display !== desired) item.style.display = desired;
-  });
+  for (const sec of SIDEBAR_SECTIONS) {
+    const visible = settings.sidebar.sections[sec.key] ?? true;
+    for (const block of locate(sec)) setVisible(block, visible);
+  }
 }

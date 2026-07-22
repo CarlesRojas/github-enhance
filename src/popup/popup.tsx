@@ -2,16 +2,17 @@ import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './popup.css';
 import {
-  DATE_PRESETS,
+  DATE_FORMATS,
   DEFAULT_SETTINGS,
   SIDEBAR_SECTIONS,
   Settings,
+  TIME_FORMATS,
   effectiveDatePattern,
   loadSettings,
   saveSettings,
 } from '../shared/settings';
 import { formatDate } from '../shared/formatDate';
-import { Group, Row, Select, TextField, Toggle } from './components';
+import { Group, Row, Select, Toggle } from './components';
 
 const VERSION = chrome.runtime.getManifest().version;
 
@@ -52,10 +53,13 @@ function Logo() {
   );
 }
 
+interface GroupProps {
+  settings: Settings;
+  update: (mutator: (draft: Settings) => void) => void;
+}
+
 function DatesGroup({ settings, update }: GroupProps) {
   const d = settings.dates;
-  const pattern = effectiveDatePattern(settings);
-  const now = new Date();
 
   return (
     <Group
@@ -74,47 +78,38 @@ function DatesGroup({ settings, update }: GroupProps) {
       />
 
       <Row
-        label="Format"
+        label="Date format"
         indented
         disabled={!d.enabled}
         control={
           <Select
-            value={d.preset}
-            options={DATE_PRESETS.map((p) => ({ value: p.key, label: p.label }))}
-            label="Date format preset"
-            onChange={(preset) =>
-              update((s) => {
-                s.dates.preset = preset;
-                if (preset !== 'custom') {
-                  const found = DATE_PRESETS.find((p) => p.key === preset);
-                  if (found) s.dates.pattern = found.pattern;
-                }
-              })
-            }
+            value={d.dateFormat}
+            options={DATE_FORMATS.map((f) => ({ value: f.key, label: f.label }))}
+            label="Date format"
+            onChange={(v) => update((s) => (s.dates.dateFormat = v))}
           />
         }
       />
 
-      {d.preset === 'custom' && (
-        <div style={{ paddingLeft: 12 }}>
-          <TextField
-            value={d.pattern}
-            label="Custom pattern"
-            placeholder="YYYY-MM-DD HH:mm"
-            onChange={(v) => update((s) => (s.dates.pattern = v))}
+      <Row
+        label="Time format"
+        indented
+        disabled={!d.enabled}
+        control={
+          <Select
+            value={d.timeFormat}
+            options={TIME_FORMATS.map((f) => ({ value: f.key, label: f.label }))}
+            label="Time format"
+            onChange={(v) => update((s) => (s.dates.timeFormat = v))}
           />
-          <p className="hint">
-            Tokens: YYYY MM DD HH mm ss · MMM/MMMM month · ddd/dddd weekday ·
-            h/A for 12-hour. Wrap literal text in [brackets].
-          </p>
-        </div>
-      )}
+        }
+      />
 
       {d.enabled && (
         <div className="preview">
           <span className="from">yesterday</span>
           <span className="arrow">→</span>
-          <span className="to">{formatDate(now, pattern)}</span>
+          <span className="to">{formatDate(new Date(), effectiveDatePattern(settings))}</span>
         </div>
       )}
     </Group>
@@ -122,45 +117,29 @@ function DatesGroup({ settings, update }: GroupProps) {
 }
 
 function SidebarGroup({ settings, update }: GroupProps) {
-  const enabled = settings.sidebar.enabled;
-
   return (
     <Group
       title="Pull Request Sidebar"
-      description="Hide sidebar sections you don’t use on PR and issue pages."
+      description="Turn a section off to hide it on PR & issue pages."
     >
-      <Row
-        label="Manage sidebar sections"
-        control={
-          <Toggle
-            checked={enabled}
-            label="Manage sidebar sections"
-            onChange={(v) => update((s) => (s.sidebar.enabled = v))}
+      {SIDEBAR_SECTIONS.map((section) => {
+        const visible = settings.sidebar.sections[section.key] ?? true;
+        const status = visible ? 'Shown' : 'Hidden';
+        return (
+          <Row
+            key={section.key}
+            label={section.label}
+            description={section.note ? `${status} · ${section.note}` : status}
+            control={
+              <Toggle
+                checked={visible}
+                label={`Show ${section.label}`}
+                onChange={(v) => update((s) => (s.sidebar.sections[section.key] = v))}
+              />
+            }
           />
-        }
-      />
-
-      {SIDEBAR_SECTIONS.map((section) => (
-        <Row
-          key={section.key}
-          indented
-          disabled={!enabled}
-          label={section.label}
-          description={
-            settings.sidebar.sections[section.key] === false ? 'Hidden' : 'Shown'
-          }
-          control={
-            <Toggle
-              checked={settings.sidebar.sections[section.key] ?? true}
-              disabled={!enabled}
-              label={`Show ${section.label}`}
-              onChange={(v) =>
-                update((s) => (s.sidebar.sections[section.key] = v))
-              }
-            />
-          }
-        />
-      ))}
+        );
+      })}
     </Group>
   );
 }
@@ -213,11 +192,6 @@ function TimelineGroup({ settings, update }: GroupProps) {
       </p>
     </Group>
   );
-}
-
-interface GroupProps {
-  settings: Settings;
-  update: (mutator: (draft: Settings) => void) => void;
 }
 
 function App() {

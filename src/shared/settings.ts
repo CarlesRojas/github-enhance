@@ -9,51 +9,95 @@ export type SidebarSectionKey =
   | 'milestone'
   | 'development'
   | 'notifications'
-  | 'participants';
+  | 'participants'
+  | 'lock';
 
 export interface SidebarSectionDef {
   key: SidebarSectionKey;
   label: string;
-  /** Lower-cased substrings matched against a sidebar section's heading text. */
+  /** Lower-cased stems matched (via `includes`) against a section's heading. */
   match: string[];
+  /** Optional selectors that identify the section's block directly. */
+  containers?: string[];
+  /**
+   * When true this is an action control (e.g. "Lock conversation") rather than
+   * a titled section: match against buttons/links and hide the tightest
+   * wrapper so a neighbouring control isn't hidden too.
+   */
+  tight?: boolean;
+  /** Shown as a hint in the popup when the section is conditional. */
+  note?: string;
 }
 
 export const SIDEBAR_SECTIONS: SidebarSectionDef[] = [
-  { key: 'reviewers', label: 'Reviewers', match: ['reviewers', 'reviewer'] },
-  { key: 'assignees', label: 'Assignees', match: ['assignees', 'assignee'] },
-  { key: 'labels', label: 'Labels', match: ['labels', 'label'] },
-  { key: 'projects', label: 'Projects', match: ['projects', 'project'] },
+  { key: 'reviewers', label: 'Reviewers', match: ['reviewer'] },
+  { key: 'assignees', label: 'Assignees', match: ['assignee'] },
+  { key: 'labels', label: 'Labels', match: ['label'] },
+  {
+    key: 'projects',
+    label: 'Projects',
+    match: ['project'],
+    note: 'Only appears on repos with Projects enabled.',
+  },
   { key: 'milestone', label: 'Milestone', match: ['milestone'] },
-  { key: 'development', label: 'Development', match: ['development'] },
-  { key: 'notifications', label: 'Notifications', match: ['notifications'] },
-  { key: 'participants', label: 'Participants', match: ['participants', 'participant'] },
+  {
+    key: 'development',
+    label: 'Development',
+    match: ['development'],
+    containers: ['#partial-pull-request-development', '[data-target="development-menu.summary"]'],
+  },
+  {
+    key: 'notifications',
+    label: 'Notifications',
+    match: ['notification'],
+    containers: ['#partial-subscription'],
+  },
+  {
+    key: 'participants',
+    label: 'Participants',
+    match: ['participant'],
+    containers: ['#partial-users-participants'],
+  },
+  {
+    key: 'lock',
+    label: 'Lock conversation',
+    match: ['lock conversation'],
+    containers: ['.js-lock-conversation'],
+    tight: true,
+  },
 ];
 
-export interface DateFormatPreset {
+export interface DateTimeFormat {
   key: string;
   label: string;
   pattern: string;
 }
 
-export const DATE_PRESETS: DateFormatPreset[] = [
-  { key: 'iso', label: 'ISO — 2026-07-22 14:30', pattern: 'YYYY-MM-DD HH:mm' },
-  { key: 'us', label: 'US — Jul 22, 2026, 2:30 PM', pattern: 'MMM D, YYYY, h:mm A' },
-  { key: 'eu', label: 'EU — 22 Jul 2026 14:30', pattern: 'D MMM YYYY HH:mm' },
-  { key: 'long', label: 'Long — Wed, July 22, 2026 14:30', pattern: 'ddd, MMMM D, YYYY HH:mm' },
-  { key: 'dateonly', label: 'Date only — 2026-07-22', pattern: 'YYYY-MM-DD' },
-  { key: 'custom', label: 'Custom…', pattern: '' },
+export const DATE_FORMATS: DateTimeFormat[] = [
+  { key: 'iso', label: '2026-07-22', pattern: 'YYYY-MM-DD' },
+  { key: 'us-long', label: 'Jul 22, 2026', pattern: 'MMM D, YYYY' },
+  { key: 'us-num', label: '07/22/2026', pattern: 'MM/DD/YYYY' },
+  { key: 'eu-long', label: '22 Jul 2026', pattern: 'D MMM YYYY' },
+  { key: 'eu-num', label: '22/07/2026', pattern: 'DD/MM/YYYY' },
+  { key: 'weekday', label: 'Wed, Jul 22, 2026', pattern: 'ddd, MMM D, YYYY' },
+  { key: 'long', label: 'Wednesday, July 22, 2026', pattern: 'dddd, MMMM D, YYYY' },
+];
+
+export const TIME_FORMATS: DateTimeFormat[] = [
+  { key: 'none', label: 'No time', pattern: '' },
+  { key: '24', label: '14:30', pattern: 'HH:mm' },
+  { key: '24s', label: '14:30:05', pattern: 'HH:mm:ss' },
+  { key: '12', label: '2:30 PM', pattern: 'h:mm A' },
+  { key: '12s', label: '2:30:05 PM', pattern: 'h:mm:ss A' },
 ];
 
 export interface Settings {
   dates: {
     enabled: boolean;
-    /** One of DATE_PRESETS keys. When 'custom', `pattern` is used verbatim. */
-    preset: string;
-    /** Token pattern (see formatDate). Kept in sync with the chosen preset. */
-    pattern: string;
+    dateFormat: string; // a DATE_FORMATS key
+    timeFormat: string; // a TIME_FORMATS key ('none' for date only)
   };
   sidebar: {
-    enabled: boolean;
     /** section key -> visible (true) / hidden (false). */
     sections: Record<string, boolean>;
   };
@@ -66,9 +110,8 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  dates: { enabled: true, preset: 'iso', pattern: 'YYYY-MM-DD HH:mm' },
+  dates: { enabled: true, dateFormat: 'iso', timeFormat: '24' },
   sidebar: {
-    enabled: false,
     sections: Object.fromEntries(SIDEBAR_SECTIONS.map((s) => [s.key, true])),
   },
   hideComments: { enabled: true },
@@ -83,7 +126,6 @@ export function mergeSettings(partial: unknown): Settings {
   return {
     dates: { ...DEFAULT_SETTINGS.dates, ...(p.dates ?? {}) },
     sidebar: {
-      enabled: p.sidebar?.enabled ?? DEFAULT_SETTINGS.sidebar.enabled,
       sections: { ...DEFAULT_SETTINGS.sidebar.sections, ...(p.sidebar?.sections ?? {}) },
     },
     hideComments: { ...DEFAULT_SETTINGS.hideComments, ...(p.hideComments ?? {}) },
@@ -91,11 +133,14 @@ export function mergeSettings(partial: unknown): Settings {
   };
 }
 
-/** The date pattern that should actually be rendered, resolving presets. */
+/** The date pattern that should actually be rendered (date + time combined). */
 export function effectiveDatePattern(s: Settings): string {
-  if (s.dates.preset === 'custom') return s.dates.pattern || 'YYYY-MM-DD HH:mm';
-  const preset = DATE_PRESETS.find((p) => p.key === s.dates.preset);
-  return preset?.pattern || s.dates.pattern || 'YYYY-MM-DD HH:mm';
+  const date =
+    DATE_FORMATS.find((f) => f.key === s.dates.dateFormat)?.pattern ??
+    DATE_FORMATS[0].pattern;
+  const time =
+    TIME_FORMATS.find((f) => f.key === s.dates.timeFormat)?.pattern ?? '';
+  return time ? `${date} ${time}` : date;
 }
 
 export async function loadSettings(): Promise<Settings> {

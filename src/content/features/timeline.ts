@@ -1,14 +1,16 @@
-// Feature 4 (experimental): reorder the pull-request conversation so it reads
-// newest-activity-first, with the compose box near the top.
+// Feature 4 (experimental): reorder the pull-request conversation to read
+// newest-first, with the compose box near the top.
 //
 // Target top-to-bottom order when enabled:
-//   1. Description  (the first comment — stays at the top, untouched)
+//   1. Description   (the first comment — stays put at the top)
 //   2. Checks / merge box
 //   3. "Add a comment" box
 //   4. The rest of the timeline, reversed (newest first)
 //
-// Every node we move first drops a placeholder comment at its original spot,
-// so disabling the feature can put everything back without a reload.
+// Timeline entries are GitHub's `.js-timeline-item` elements, found anywhere
+// under `.js-discussion` (they're often nested), so reordering doesn't depend
+// on them being direct children. Every moved node leaves a placeholder at its
+// original spot, so disabling the feature restores the page without a reload.
 
 import { Settings } from '../../shared/settings';
 
@@ -27,14 +29,7 @@ function markOrigin(node: Movable): void {
   node.setAttribute(MOVED, '1');
 }
 
-function isDescription(child: Element, index: number): boolean {
-  // The first child that actually contains a comment body is the PR/issue
-  // description.
-  return index === 0 && !!child.querySelector('.comment-body, .timeline-comment');
-}
-
 export function resetTimeline(): void {
-  const discussion = document.querySelector<HTMLElement>('.js-discussion');
   document.querySelectorAll<Movable>(`[${MOVED}="1"]`).forEach((node) => {
     const ph = node.__ghePlaceholder;
     if (ph && ph.parentElement) {
@@ -44,7 +39,31 @@ export function resetTimeline(): void {
     node.__ghePlaceholder = undefined;
     node.removeAttribute(MOVED);
   });
-  discussion?.removeAttribute(FLAG);
+  document.querySelector('.js-discussion')?.removeAttribute(FLAG);
+}
+
+function descriptionEntry(discussion: HTMLElement): HTMLElement | null {
+  const body = discussion.querySelector<HTMLElement>('.comment-body');
+  return body?.closest<HTMLElement>('.js-timeline-item, .TimelineItem, .timeline-comment-wrapper') ?? null;
+}
+
+function findMergeBox(root: ParentNode): HTMLElement | null {
+  return (
+    root.querySelector<HTMLElement>('#partial-pull-merging') ||
+    root.querySelector<HTMLElement>('[data-testid="mergebox-partial"]') ||
+    root.querySelector<HTMLElement>('.js-merge-pr, .merge-pr, .merge-message') ||
+    null
+  );
+}
+
+function findComposeBox(root: ParentNode): HTMLElement | null {
+  const field = root.querySelector<HTMLElement>(
+    '#new_comment_field, textarea[name="comment[body]"], .js-new-comment-form',
+  );
+  const wrapper = field?.closest<HTMLElement>(
+    '.discussion-timeline-actions, .timeline-comment-wrapper, .js-comment-container',
+  );
+  return wrapper || root.querySelector<HTMLElement>('.discussion-timeline-actions') || null;
 }
 
 export function applyTimeline(settings: Settings): void {
@@ -52,7 +71,6 @@ export function applyTimeline(settings: Settings): void {
   if (!discussion) return;
 
   const applied = discussion.getAttribute(FLAG) === '1';
-
   if (!settings.timeline.enabled) {
     if (applied) resetTimeline();
     return;
@@ -61,52 +79,50 @@ export function applyTimeline(settings: Settings): void {
 
   const bucket =
     discussion.closest<HTMLElement>('#discussion_bucket') ||
-    discussion.parentElement;
-  if (!bucket) return;
+    discussion.parentElement ||
+    discussion;
 
-  // The "checks / merge status" box and the compose box. Bail until at least
-  // one is present, so we don't lock in an order before the page has loaded.
-  const mergeBox = bucket.querySelector<HTMLElement>('#partial-pull-merging');
-  const commentForm =
-    bucket.querySelector<HTMLElement>('.discussion-timeline-actions') ||
-    (document
-      .querySelector('#new_comment_field, .js-new-comment-form')
-      ?.closest<HTMLElement>(
-        '.discussion-timeline-actions, .timeline-comment-wrapper, .js-comment-container',
-      ) ??
-      null);
-
-  if (!mergeBox && !commentForm) return;
-
-  // Anything we might move must not be an ancestor of the discussion list.
   const safe = (n: HTMLElement | null): n is HTMLElement =>
     !!n && n !== discussion && !n.contains(discussion);
 
-  const children = Array.from(discussion.children) as HTMLElement[];
-  const description = children.find((c, i) => isDescription(c, i)) || null;
+  const description = descriptionEntry(discussion);
+  const entries = Array.from(
+    discussion.querySelectorAll<HTMLElement>('.js-timeline-item'),
+  );
+  const reverseSet = entries.filter(
+    (e) =>
+      e !== description &&
+      !(description && (e.contains(description) || description.contains(e))),
+  );
 
-  const timelineItems = children.filter((c, i) => {
-    if (isDescription(c, i)) return false;
-    if (safe(mergeBox) && (c === mergeBox || c.contains(mergeBox))) return false;
-    if (safe(commentForm) && (c === commentForm || c.contains(commentForm))) return false;
-    return true;
-  });
+  const mergeBox = findMergeBox(bucket);
+  const composeBox = findComposeBox(bucket);
 
-  // Record original positions before moving anything.
-  [mergeBox, commentForm, ...timelineItems].forEach((n) => {
-    if (safe(n)) markOrigin(n);
-  });
+  // Nothing worth doing yet (e.g. page still loading) — try again next pass.
+  const willMove =
+    reverseSet.length >= 2 || safe(mergeBox) || safe(composeBox);
+  if (!willMove) return;
 
+  // Record original positions before moving anything (enables restore).
+  if (safe(mergeBox)) markOrigin(mergeBox);
+  if (safe(composeBox)) markOrigin(composeBox);
+  reverseSet.forEach((e) => safe(e) && markOrigin(e));
+
+  // Build the new block: [checks] [compose] [reversed timeline].
   const fragment = document.createDocumentFragment();
   if (safe(mergeBox)) fragment.appendChild(mergeBox);
-  if (safe(commentForm)) fragment.appendChild(commentForm);
-  timelineItems.reverse().forEach((item) => fragment.appendChild(item));
+  if (safe(composeBox)) fragment.appendChild(composeBox);
+  reverseSet
+    .slice()
+    .reverse()
+    .forEach((e) => safe(e) && fragment.appendChild(e));
 
-  if (description && description.parentElement === discussion) {
-    description.after(fragment);
-  } else {
-    discussion.appendChild(fragment);
-  }
+  // Insert right after the description, at the top level of the discussion.
+  const ref =
+    description && description.parentElement === discussion
+      ? description.nextSibling
+      : discussion.firstChild;
+  discussion.insertBefore(fragment, ref);
 
   discussion.setAttribute(FLAG, '1');
 }
