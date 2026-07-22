@@ -144,6 +144,16 @@ html[data-ghe-redesign] #partial-pull-merging .branch-action-item {
   overflow: hidden;
 }
 
+/* While the checks box is still loading (its inner card hasn't rendered
+   yet), give the wrapper the card's bg and radius so the loading state
+   doesn't flash flat and square. Steps aside as soon as the card exists. */
+html[data-ghe-redesign] [data-testid="mergebox-partial"]:not(:has(.border)),
+html[data-ghe-redesign] #partial-pull-merging:not(:has(.branch-action-item)) {
+  background-color: var(--ghe-card-bg);
+  border-radius: var(--ghe-radius);
+  overflow: hidden;
+}
+
 /* Checks card state accents. The overall mergeability icon carries the
    state's emphasis token in its inline style; mirror it — GitHub's colored
    border for that state plus a slight tint of the same color on the card bg.
