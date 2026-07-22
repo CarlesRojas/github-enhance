@@ -24,6 +24,7 @@ import { Settings } from '../../shared/settings';
 const SIG = 'data-ghe-layout';
 const MOVED = 'data-ghe-moved';
 const DEPLOY_TOP = 'ghe-deploy-top';
+const LIFTED = 'ghe-lifted';
 
 interface Movable extends HTMLElement {
   __ghePlaceholder?: Comment;
@@ -62,6 +63,7 @@ export function resetLayout(): void {
     node.removeAttribute(MOVED);
   });
   document.querySelectorAll('.' + DEPLOY_TOP).forEach((el) => el.classList.remove(DEPLOY_TOP));
+  document.querySelectorAll('.' + LIFTED).forEach((el) => el.classList.remove(LIFTED));
   document.querySelector('.js-discussion')?.removeAttribute(SIG);
 }
 
@@ -155,9 +157,17 @@ export function applyLayout(settings: Settings): void {
   // Nothing actionable yet (e.g. page still loading) — leave sig unset to retry.
   if (!safe(mergeBox) && !safe(composeBox) && !willReverse) return;
 
-  // Move checks/compose to just after the description (checks first).
-  if (safe(mergeBox)) markOrigin(mergeBox);
-  if (safe(composeBox)) markOrigin(composeBox);
+  // Move checks/compose to just after the description (checks first). They
+  // carry their own left offset (e.g. the mergebox's `ml-md-6`) for their
+  // original spot, so neutralise it to line up with the timeline's left edge.
+  if (safe(mergeBox)) {
+    markOrigin(mergeBox);
+    mergeBox.classList.add(LIFTED);
+  }
+  if (safe(composeBox)) {
+    markOrigin(composeBox);
+    composeBox.classList.add(LIFTED);
+  }
   if (safe(mergeBox) || safe(composeBox)) {
     const top = document.createDocumentFragment();
     if (safe(mergeBox)) top.appendChild(mergeBox);

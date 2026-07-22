@@ -39,3 +39,9 @@
   border-bottom: 1px solid
     var(--borderColor-muted, var(--color-border-muted, #d8dee4)) !important;
 }
+
+/* Lifted checks / compose boxes keep their own left indent from their original
+   spot; drop it so they line up with the timeline's left edge. */
+.ghe-lifted {
+  margin-left: 0 !important;
+}
