@@ -10,6 +10,7 @@
 // any state restores correctly without a reload.
 
 import { PAGE_WIDTH_DEFAULT, Settings } from '../../shared/settings';
+import { isPRPage } from '../util';
 
 const SIG = 'data-ghe-layout';
 const MOVED = 'data-ghe-moved';
@@ -38,11 +39,6 @@ function setVar(name: string, value: string | null): void {
   } else if (style.getPropertyValue(name) !== value) {
     style.setProperty(name, value);
   }
-}
-
-/** True on pull-request pages (conversation, files, checks tabs). */
-function isPRPage(): boolean {
-  return /^\/[^/]+\/[^/]+\/pull\/\d+/.test(location.pathname);
 }
 
 /** Publish the slider values as CSS variables consumed by content.css. */

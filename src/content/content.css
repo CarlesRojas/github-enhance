@@ -72,3 +72,39 @@ html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutWrapper"],
 html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutRoot"] {
   max-width: var(--ghe-page-max-width, 1280px) !important;
 }
+
+/* ============================ PR page redesign ============================
+   Active only while Appearance → "Enable Pull Request Page Redesign" is on
+   AND the current page is a pull request (attribute set by redesign.ts).
+   Colors use GitHub's own tokens, so every native theme works automatically. */
+
+html[data-ghe-redesign] {
+  /* Corner radius used throughout the redesign. */
+  --ghe-radius: 12px;
+}
+
+/* 1. Page background matches the header's background. Containers between the
+   body and the content are made transparent so the color shows through. */
+html[data-ghe-redesign] body {
+  background-color: var(
+    --bgColor-inset,
+    var(--color-canvas-inset, #f6f8fa)
+  ) !important;
+}
+html[data-ghe-redesign] .application-main,
+html[data-ghe-redesign] main {
+  background: transparent !important;
+}
+
+/* 2. Sidebar sections as rounded cards: separators removed entirely, each
+   card keeps the page's original background color. */
+html[data-ghe-redesign] .discussion-sidebar-item {
+  border: 0 !important;
+  background-color: var(
+    --bgColor-default,
+    var(--color-canvas-default, #ffffff)
+  ) !important;
+  border-radius: var(--ghe-radius);
+  padding: 12px !important;
+  margin-bottom: 8px;
+}

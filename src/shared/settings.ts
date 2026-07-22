@@ -112,6 +112,10 @@ export interface Settings {
   hideComments: {
     enabled: boolean;
   };
+  appearance: {
+    /** Visual overhaul of the pull-request page (all-or-nothing toggle). */
+    redesign: boolean;
+  };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -127,6 +131,7 @@ export const DEFAULT_SETTINGS: Settings = {
     sections: Object.fromEntries(SIDEBAR_SECTIONS.map((s) => [s.key, true])),
   },
   hideComments: { enabled: true },
+  appearance: { redesign: false },
 };
 
 const STORAGE_KEY = 'settings';
@@ -141,6 +146,7 @@ export function mergeSettings(partial: unknown): Settings {
       sections: { ...DEFAULT_SETTINGS.sidebar.sections, ...(p.sidebar?.sections ?? {}) },
     },
     hideComments: { ...DEFAULT_SETTINGS.hideComments, ...(p.hideComments ?? {}) },
+    appearance: { ...DEFAULT_SETTINGS.appearance, ...(p.appearance ?? {}) },
   };
 }
 

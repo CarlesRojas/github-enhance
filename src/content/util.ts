@@ -26,6 +26,11 @@ export function waitFor<T>(
   });
 }
 
+/** True on pull-request pages (conversation, files, checks tabs). */
+export function isPRPage(): boolean {
+  return /^\/[^/]+\/[^/]+\/pull\/\d+/.test(location.pathname);
+}
+
 /** Case-insensitive, whitespace-collapsed text of an element. */
 export function normText(el: Element | null | undefined): string {
   return (el?.textContent ?? '').replace(/\s+/g, ' ').trim().toLowerCase();

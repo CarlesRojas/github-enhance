@@ -62,6 +62,26 @@ interface GroupProps {
   update: (mutator: (draft: Settings) => void) => void;
 }
 
+function AppearanceGroup({ settings, update }: GroupProps) {
+  return (
+    <Group
+      title="Appearance"
+      description="Visual overhaul of the pull request page. Works with all GitHub themes."
+    >
+      <Row
+        label="Enable Pull Request Page Redesign"
+        control={
+          <Toggle
+            checked={settings.appearance.redesign}
+            label="Enable Pull Request Page Redesign"
+            onChange={(v) => update((s) => (s.appearance.redesign = v))}
+          />
+        }
+      />
+    </Group>
+  );
+}
+
 function DatesGroup({ settings, update }: GroupProps) {
   const d = settings.dates;
   const now = new Date();
@@ -285,6 +305,7 @@ function App() {
 
       {settings && (
         <>
+          <AppearanceGroup settings={settings} update={update} />
           <DatesGroup settings={settings} update={update} />
           <LayoutGroup settings={settings} update={update} />
           <SidebarGroup settings={settings} update={update} />
