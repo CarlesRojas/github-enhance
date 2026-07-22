@@ -418,9 +418,13 @@ html[data-ghe-redesign] .timeline-comment {
 }
 
 /* The PR description (its .timeline-comment carries id="pullrequest-…",
-   unlike regular comments' "issuecomment-…") gets the accent border. */
+   unlike regular comments' "issuecomment-…") gets the muted accent border —
+   the same token GitHub already uses for the description header divider. */
 html[data-ghe-redesign] .timeline-comment[id^="pullrequest-"] {
-  border-color: var(--ghe-selected-border) !important;
+  border-color: var(
+    --borderColor-accent-muted,
+    var(--color-accent-muted, #388bfd66)
+  ) !important;
 }
 
 /* The speech caret pointing at the avatar (drawn with pseudo-elements on
