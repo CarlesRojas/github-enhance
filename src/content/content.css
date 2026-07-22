@@ -139,11 +139,21 @@ html[data-ghe-redesign] #partial-pull-merging .branch-action-item {
 }
 
 /* The merge-action footer (the "Merge when ready" strip) loses its muted
-   background so the card reads as one surface, and its bottom padding — the
-   relocated "Convert to draft" slot below provides the spacing instead. */
+   background so the card reads as one surface. */
 html[data-ghe-redesign] [data-testid="mergebox-partial"] .bgColor-muted[class*="rounded-bottom"],
 html[data-ghe-redesign] #partial-pull-merging .bgColor-muted[class*="rounded-bottom"] {
   background-color: transparent !important;
+}
+
+/* Its bottom padding is dropped only while the relocated "Convert to draft"
+   slot below provides the spacing — on draft PRs the slot doesn't exist and
+   the footer keeps its own padding. */
+html[data-ghe-redesign]
+  [data-testid="mergebox-partial"]:has(.ghe-draft-slot)
+  .bgColor-muted[class*="rounded-bottom"],
+html[data-ghe-redesign]
+  #partial-pull-merging:has(.ghe-draft-slot)
+  .bgColor-muted[class*="rounded-bottom"] {
   padding-bottom: 0 !important;
 }
 
