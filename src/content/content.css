@@ -315,6 +315,12 @@ html[data-ghe-redesign]
    data-component; the hashed prc-TabNav-* class names are matched by prefix
    only. The tabs are the only [role="tab"] elements inside it. */
 
+/* The tab row gets breathing room from the content below it (the border it
+   used to sit flush against is gone). */
+html[data-ghe-redesign] [data-component="PH_Navigation"] {
+  margin-bottom: var(--ghe-gap);
+}
+
 /* The nav and tablist lose their bottom border / underline entirely. */
 html[data-ghe-redesign] [data-component="PH_Navigation"] nav[class*="prc-TabNav"],
 html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tablist"] {
