@@ -8,6 +8,13 @@
 // With everything on the order becomes: description, checks, compose, then the
 // reversed timeline. Each toggle also works on its own.
 //
+// Inverting also, in the timeline order:
+//   • reverses grouped deployment rows inside the ".merge-status-list" lists
+//     (GitHub packs several deployments into one row list), and
+//   • lifts the "deployments box" ("This branch was successfully deployed") to
+//     sit right above the newest timeline item, with its divider flipped to the
+//     bottom.
+//
 // Every moved node leaves a placeholder at its original spot. The whole thing
 // reconciles from a clean slate whenever the desired arrangement changes, so
 // any combination of toggles restores correctly without a reload.
@@ -16,6 +23,7 @@ import { Settings } from '../../shared/settings';
 
 const SIG = 'data-ghe-layout';
 const MOVED = 'data-ghe-moved';
+const DEPLOY_TOP = 'ghe-deploy-top';
 
 interface Movable extends HTMLElement {
   __ghePlaceholder?: Comment;
@@ -29,6 +37,20 @@ function markOrigin(node: Movable): void {
   node.setAttribute(MOVED, '1');
 }
 
+/** Reverse a set of sibling nodes in place, at the first node's position. */
+function reverseInPlace(nodes: HTMLElement[]): void {
+  if (nodes.length < 2) return;
+  nodes.forEach(markOrigin);
+  const anchor = (nodes[0] as Movable).__ghePlaceholder;
+  if (!anchor || !anchor.parentNode) return;
+  const frag = document.createDocumentFragment();
+  nodes
+    .slice()
+    .reverse()
+    .forEach((n) => frag.appendChild(n));
+  anchor.parentNode.insertBefore(frag, anchor);
+}
+
 export function resetLayout(): void {
   document.querySelectorAll<Movable>(`[${MOVED}="1"]`).forEach((node) => {
     const ph = node.__ghePlaceholder;
@@ -39,6 +61,7 @@ export function resetLayout(): void {
     node.__ghePlaceholder = undefined;
     node.removeAttribute(MOVED);
   });
+  document.querySelectorAll('.' + DEPLOY_TOP).forEach((el) => el.classList.remove(DEPLOY_TOP));
   document.querySelector('.js-discussion')?.removeAttribute(SIG);
 }
 
@@ -75,6 +98,23 @@ function findComposeBox(): HTMLElement | null {
   return wrapper || document.querySelector<HTMLElement>('.discussion-timeline-actions') || null;
 }
 
+/** The "This branch was successfully deployed" box. */
+function findDeploymentsBox(): HTMLElement | null {
+  const wrapper = document.querySelector<HTMLElement>('[data-url*="deployments_box"]');
+  return wrapper?.closest<HTMLElement>('.branch-action') ?? null;
+}
+
+/** Reverse grouped deployment rows within each `.merge-status-list`. */
+function reverseDeployRows(discussion: HTMLElement): void {
+  discussion.querySelectorAll<HTMLElement>('.merge-status-list').forEach((list) => {
+    if (list.closest('.comment-body, .markdown-body')) return;
+    const rows = Array.from(list.children).filter((c) =>
+      /deployed/i.test(c.textContent || ''),
+    ) as HTMLElement[];
+    if (rows.length >= 2) reverseInPlace(rows);
+  });
+}
+
 export function applyLayout(settings: Settings): void {
   const discussion = document.querySelector<HTMLElement>('.js-discussion');
   if (!discussion) return;
@@ -105,15 +145,12 @@ export function applyLayout(settings: Settings): void {
   const composeBox = composeTop ? findComposeBox() : null;
   const willReverse = invertTimeline && items.length >= 2;
 
-  // Nothing actionable yet (page still loading) — leave sig unset to retry.
+  // Nothing actionable yet (e.g. page still loading) — leave sig unset to retry.
   if (!safe(mergeBox) && !safe(composeBox) && !willReverse) return;
 
-  // Record origins up front so restore is exact.
+  // Move checks/compose to just after the description (checks first).
   if (safe(mergeBox)) markOrigin(mergeBox);
   if (safe(composeBox)) markOrigin(composeBox);
-  if (willReverse) items.forEach((e) => safe(e) && markOrigin(e));
-
-  // Move checks/compose to just after the description (checks first).
   if (safe(mergeBox) || safe(composeBox)) {
     const top = document.createDocumentFragment();
     if (safe(mergeBox)) top.appendChild(mergeBox);
@@ -123,16 +160,18 @@ export function applyLayout(settings: Settings): void {
     parent.insertBefore(top, ref);
   }
 
-  // Reverse the timeline items in place (at the first item's original spot).
+  // Reverse the timeline items, then the grouped deployment rows within them.
   if (willReverse) {
-    const anchor = (items[0] as Movable).__ghePlaceholder;
-    if (anchor && anchor.parentNode) {
-      const frag = document.createDocumentFragment();
-      items
-        .slice()
-        .reverse()
-        .forEach((e) => frag.appendChild(e));
-      anchor.parentNode.insertBefore(frag, anchor);
+    reverseInPlace(items);
+    reverseDeployRows(discussion);
+
+    // Lift the deployments box above the (now newest-first) timeline.
+    const box = findDeploymentsBox();
+    const firstItem = items[items.length - 1]; // newest, now topmost
+    if (safe(box) && firstItem.parentNode) {
+      markOrigin(box);
+      box.classList.add(DEPLOY_TOP);
+      firstItem.parentNode.insertBefore(box, firstItem);
     }
   }
 
