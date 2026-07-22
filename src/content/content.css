@@ -388,3 +388,22 @@ html[data-ghe-redesign] .timeline-comment .timeline-comment-header {
   border-top-left-radius: calc(var(--ghe-radius) / 4 - 1px) !important;
   border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
 }
+
+/* Minimized (hidden) comments: the collapsed "This comment was marked as…"
+   bar is the <summary> inside the .minimized-comment wrapper — it takes the
+   same card look. When expanded, the revealed comment body is a regular
+   .timeline-comment and is covered above. */
+html[data-ghe-redesign] .minimized-comment details > summary {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+  border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
+}
+
+/* Resolved review threads (the collapsed "conversation resolved" boxes). */
+html[data-ghe-redesign] .js-resolvable-timeline-thread-container[data-resolved="true"] {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+  border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
+}
