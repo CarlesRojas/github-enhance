@@ -599,6 +599,11 @@ html[data-ghe-redesign] .TimelineItem::before {
   width: 2px !important;
 }
 
+/* The timeline group separator band blends into the page background. */
+html[data-ghe-redesign] .TimelineItem-break {
+  background-color: var(--ghe-page-bg) !important;
+}
+
 /* The comment composer (new comment, inline replies, edit forms) as a card,
    with its Write / Preview tabs as pills carrying the same bg, border, and
    radius. Not overflow-hidden — the toolbar's Copilot/kebab menus overflow
