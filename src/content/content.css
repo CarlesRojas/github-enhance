@@ -219,11 +219,14 @@ html[data-ghe-redesign] [class*="Diff-module__diff__"] .rounded-bottom-2 {
      wrapper, not in here. */
   overflow: hidden !important;
 }
-/* Collapsed file: its diff body is removed, so the header is the whole card
-   and rounds its bottom corners too. */
+/* Collapsed file: the header is the whole card, so both the sticky wrapper
+   (which paints the background) and the header itself round their bottom
+   corners too. The collapsed header carries a `collapsed` module class. */
+html[data-ghe-redesign] [class*="DiffFileHeader-module__collapsed"],
 html[data-ghe-redesign]
-  [class*="Diff-module__diff__"]:not(:has(> .rounded-bottom-2))
-  [class*="DiffFileHeader-module__diff-file-header"] {
+  [class*="Diff-module__diffHeaderWrapper"]:has(
+    [class*="DiffFileHeader-module__collapsed"]
+  ) {
   border-bottom-left-radius: var(--ghe-radius) !important;
   border-bottom-right-radius: var(--ghe-radius) !important;
 }
