@@ -15,14 +15,18 @@ yourself, see `DEV.md` → *Load in Chrome*.)
    ```bash
    npm run build
    ```
-3. Zip the **contents** of `dist/` (so `manifest.json` sits at the zip root):
+3. Zip the **contents** of `dist/` (so `manifest.json` sits at the zip root)
+   into `release/`, named with the version:
    ```bash
-   cd dist && zip -r ../github-enhance.zip . && cd ..
+   VERSION=$(node -p "require('./manifest.json').version")
+   mkdir -p release
+   cd dist && zip -r "../release/github-enhance-$VERSION.zip" . && cd ..
    ```
+   This produces e.g. `release/github-enhance-0.2.0.zip`.
 
 ## Submit
 
-1. In the dashboard, click **Add new item** and upload `github-enhance.zip`.
+1. In the dashboard, click **Add new item** and upload the zip from `release/`.
 2. Fill in the listing: description, at least one screenshot, category, and the
    privacy tab — this extension only requests the `storage` permission and runs
    on `github.com` (no remote code, no data collection).
