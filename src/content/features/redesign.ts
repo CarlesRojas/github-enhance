@@ -18,44 +18,22 @@ const HIDDEN_MARK = 'data-ghe-draft-hidden';
 const SLOT_CLASS = 'ghe-draft-slot';
 
 /**
- * Only these places may contain the control we relocate: the PR sidebar and
- * the area around the checks / merge box. Never dialogs — the convert
- * confirmation modal has its own "Convert to draft" button that must stay.
+ * GitHub's inline "Convert to draft" control — identified by the
+ * "Still in progress?" lead-in sitting right next to it. That lead-in is what
+ * distinguishes it from the confirmation dialog's own "Convert to draft"
+ * footer button (which must never be touched), so this matches only the
+ * inline block regardless of where it lives (below the checks box or in the
+ * sidebar). Our proxy and anything inside a dialog are excluded outright.
  */
-function searchRoots(): HTMLElement[] {
-  const roots: HTMLElement[] = [];
-  for (const sel of [
-    '#pr-conversation-sidebar',
-    '#partial-discussion-sidebar',
-    '.Layout-sidebar',
-  ]) {
-    const el = document.querySelector<HTMLElement>(sel);
-    if (el) roots.push(el);
-  }
-  const merge = document.querySelector<HTMLElement>(
-    '[data-testid="mergebox-partial"], #partial-pull-merging',
-  );
-  if (merge) {
-    // The "Still in progress?" block can be a sibling of a wrapper several
-    // levels above the mergebox — climb until an ancestor contains it.
-    // Dialogs are portaled outside the page layout, so they stay out of reach.
-    let root: HTMLElement | null = merge.parentElement;
-    for (let i = 0; root && i < 8; i++) {
-      if ((root.textContent || '').toLowerCase().includes('still in progress')) break;
-      root = root.parentElement;
-    }
-    roots.push(root ?? merge.parentElement ?? merge);
-  }
-  return roots;
-}
-
-/** GitHub's own "Convert to draft" control (never our proxy, never a dialog's). */
 function findDraftButton(): HTMLElement | null {
-  for (const root of searchRoots()) {
-    for (const el of root.querySelectorAll<HTMLElement>('button, summary, a')) {
-      if (el.closest('.' + SLOT_CLASS)) continue;
-      if (el.closest('[role="dialog"], [role="alertdialog"], [class*="prc-Dialog"]')) continue;
-      if (normText(el) === 'convert to draft') return el;
+  for (const el of document.querySelectorAll<HTMLElement>('button, summary, a')) {
+    if (el.closest('.' + SLOT_CLASS)) continue;
+    if (el.closest('[role="dialog"], [role="alertdialog"], [class*="prc-Dialog"]')) continue;
+    if (normText(el) !== 'convert to draft') continue;
+    let anc: HTMLElement | null = el.parentElement;
+    for (let i = 0; anc && i < 4; i++) {
+      if ((anc.textContent || '').toLowerCase().includes('still in progress')) return el;
+      anc = anc.parentElement;
     }
   }
   return null;
