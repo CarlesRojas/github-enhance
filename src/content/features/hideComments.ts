@@ -10,7 +10,9 @@
 //
 // The button is only added to real, hideable comments (those with an
 // issuecomment / review-comment anchor), which conveniently excludes the
-// PR/issue description, and never to already-minimized comments.
+// PR/issue description. On an already-minimized comment (expanded via its
+// "Show comment" bar) the same button reads "Unhide" and submits GitHub's
+// unminimize form instead — the mode is resolved at click time.
 
 import { Settings } from '../../shared/settings';
 import { waitFor, normText } from '../util';
@@ -126,16 +128,60 @@ async function hideAsOutdated(comment: Element, btn: HTMLButtonElement): Promise
   }
 }
 
-function makeButton(comment: Element): HTMLButtonElement {
+/**
+ * Unhide a minimized comment by submitting GitHub's unminimize form. The
+ * form lives in the "…" kebab menu, whose content is deferred-loaded — if
+ * it isn't in the DOM yet, opening the menu makes GitHub fetch it.
+ */
+async function unhideComment(scope: Element, btn: HTMLButtonElement): Promise<void> {
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Unhiding…';
+  try {
+    let form = scope.querySelector<HTMLFormElement>('form.js-comment-unminimize');
+    if (!form) {
+      const details = scope.querySelector<HTMLDetailsElement>(
+        '.timeline-comment-actions details',
+      );
+      if (details && !details.open) details.querySelector('summary')?.click();
+      form = await waitFor(
+        () => scope.querySelector<HTMLFormElement>('form.js-comment-unminimize'),
+        2000,
+      );
+      details?.removeAttribute('open'); // don't leave the menu showing
+    }
+    if (!form) throw new Error('no unminimize form found');
+
+    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (typeof form.requestSubmit === 'function') {
+      form.requestSubmit(submit ?? undefined);
+    } else {
+      form.submit();
+    }
+  } catch (err) {
+    console.debug('[github-enhance] unhide failed', err);
+    btn.disabled = false;
+    btn.textContent = original || 'Unhide';
+    btn.title = 'Could not unhide automatically — use the “…” menu instead.';
+  }
+}
+
+function makeButton(): HTMLButtonElement {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = BTN_CLASS;
-  btn.textContent = 'Hide';
-  btn.title = 'Hide this comment as outdated';
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    void hideAsOutdated(comment, btn);
+    // Resolve the mode at click time — the comment may have been hidden or
+    // unhidden (and re-rendered) since the button was labelled.
+    const minimized = btn.closest('.minimized-comment');
+    if (minimized) {
+      void unhideComment(minimized, btn);
+      return;
+    }
+    const comment = btn.closest('.timeline-comment, .review-comment, .js-comment');
+    if (comment) void hideAsOutdated(comment, btn);
   });
   return btn;
 }
@@ -146,7 +192,7 @@ export function applyHideButtons(settings: Settings): void {
   );
 
   actionBars.forEach((actions) => {
-    const existing = actions.querySelector<HTMLElement>('.' + BTN_CLASS);
+    const existing = actions.querySelector<HTMLButtonElement>('.' + BTN_CLASS);
 
     if (!settings.hideComments.enabled) {
       existing?.remove();
@@ -157,17 +203,22 @@ export function applyHideButtons(settings: Settings): void {
       '.timeline-comment, .review-comment, .js-comment',
     );
     const anchor = actions.closest(COMMENT_ANCHOR);
-    const minimized =
-      comment?.classList.contains('minimized-comment') ||
-      !!comment?.querySelector('.minimized-comment');
 
-    if (!comment || !anchor || minimized) {
+    if (!comment || !anchor) {
       existing?.remove();
       return;
     }
 
-    if (!existing) {
-      actions.insertBefore(makeButton(comment), actions.firstChild);
+    const btn = existing ?? makeButton();
+    if (!existing) actions.insertBefore(btn, actions.firstChild);
+
+    // Inside a minimized comment the button unhides; elsewhere it hides.
+    const mode = actions.closest('.minimized-comment') ? 'unhide' : 'hide';
+    if (btn.dataset.gheMode !== mode && !btn.disabled) {
+      btn.dataset.gheMode = mode;
+      btn.textContent = mode === 'hide' ? 'Hide' : 'Unhide';
+      btn.title =
+        mode === 'hide' ? 'Hide this comment as outdated' : 'Unhide this comment';
     }
   });
 }

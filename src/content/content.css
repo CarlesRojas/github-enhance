@@ -1,28 +1,56 @@
 /* Styles injected into GitHub pages for elements the extension adds. */
 
+/* The Hide/Unhide comment button — same GitHub default-button styling as
+   the Convert-to-draft proxy (.ghe-draft-btn), via the same tokens. */
 .ghe-hide-btn {
   display: inline-block;
   margin: 0 6px 0 0;
-  padding: 0 4px;
   font: inherit;
   font-size: 12px;
-  line-height: 1.6;
-  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
-  background: transparent;
-  border: 0;
-  border-radius: 4px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border: 1px solid
+    var(
+      --button-default-borderColor-rest,
+      var(--borderColor-default, var(--color-border-default, #d0d7de))
+    );
+  border-radius: 6px;
+  background: var(
+    --button-default-bgColor-rest,
+    var(--color-btn-bg, #f6f8fa)
+  );
+  color: var(
+    --button-default-fgColor-rest,
+    var(--fgColor-default, var(--color-btn-text, #1f2328))
+  );
   cursor: pointer;
   vertical-align: middle;
 }
 
 .ghe-hide-btn:hover:not(:disabled) {
-  color: var(--fgColor-accent, var(--color-accent-fg, #0969da));
-  text-decoration: underline;
+  background: var(--button-default-bgColor-hover, var(--color-btn-hover-bg, #eff2f5));
+  border-color: var(
+    --button-default-borderColor-hover,
+    var(--borderColor-default, #d0d7de)
+  );
+}
+
+.ghe-hide-btn:active:not(:disabled) {
+  background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #e7ebef));
 }
 
 .ghe-hide-btn:disabled {
   cursor: default;
   opacity: 0.6;
+}
+
+/* Regular comment headers lay their actions out as a centered flex row, but
+   the action bar inside a minimized comment doesn't — there the injected
+   button sat visibly lower than the kebab next to it. Make that bar a
+   centered flex row too. */
+.minimized-comment .timeline-comment-actions {
+  display: flex;
+  align-items: center;
 }
 
 /* The absolute-date span inherits GitHub's own typography so it blends in. */
@@ -86,8 +114,11 @@ html[data-ghe-redesign] {
   --ghe-radius: 16px;
   /* Vertical gap between sidebar cards. */
   --ghe-gap: 8px;
-  /* Page background — the header's background color. */
-  --ghe-page-bg: var(--bgColor-inset, var(--color-canvas-inset, #f6f8fa));
+  /* Page background — the header's background color, nudged a touch darker
+     on light themes (the dark-theme overrides below reset it to the plain
+     token). */
+  --ghe-page-bg-base: var(--bgColor-inset, var(--color-canvas-inset, #f6f8fa));
+  --ghe-page-bg: color-mix(in srgb, var(--ghe-page-bg-base) 96%, #000000);
   /* Card background — the page's original background color. */
   --ghe-card-bg: var(--bgColor-default, var(--color-canvas-default, #ffffff));
   /* Card border — light themes: a bit darker than the PAGE bg (the card is
@@ -101,27 +132,28 @@ html[data-ghe-redesign] {
     var(--ghe-card-bg) 96%,
     var(--fgColor-default, var(--color-fg-default, #1f2328))
   );
-  /* Highlighted (selected) card: neutral — a stronger shade of the same
-     card bg plus the theme's emphasis (gray) border, no accent color. */
-  --ghe-selected-bg: color-mix(
-    in srgb,
-    var(--ghe-card-bg) 92%,
-    var(--fgColor-default, var(--color-fg-default, #1f2328))
+  /* Highlighted (selected) card: accent-tinted bg with an accent border. */
+  --ghe-selected-bg: var(--bgColor-accent-muted, var(--color-accent-subtle, #ddf4ff));
+  --ghe-selected-border: var(
+    --borderColor-accent-emphasis,
+    var(--color-accent-emphasis, #0969da)
   );
-  --ghe-selected-border: var(--borderColor-emphasis, #818b98);
   --ghe-selected-hover-bg: color-mix(
     in srgb,
-    var(--ghe-card-bg) 88%,
+    var(--ghe-selected-bg) 92%,
     var(--fgColor-default, var(--color-fg-default, #1f2328))
   );
 }
 
-/* …dark themes: slightly lighter than the card (including "auto" → dark). */
+/* …dark themes: slightly lighter than the card (including "auto" → dark),
+   and the page bg stays the plain token — only light themes darken it. */
 html[data-ghe-redesign][data-color-mode="dark"] {
+  --ghe-page-bg: var(--ghe-page-bg-base);
   --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 88%, #ffffff);
 }
 @media (prefers-color-scheme: dark) {
   html[data-ghe-redesign][data-color-mode="auto"] {
+    --ghe-page-bg: var(--ghe-page-bg-base);
     --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 88%, #ffffff);
   }
 }
@@ -134,6 +166,83 @@ html[data-ghe-redesign] body {
 html[data-ghe-redesign] .application-main,
 html[data-ghe-redesign] main {
   background: transparent !important;
+}
+
+/* On light themes the darkened page bg is painted onto the site header too,
+   so the two keep matching. Dark themes leave the header alone — there the
+   page bg already equals the header's own. */
+html[data-ghe-redesign][data-color-mode="light"] .AppHeader {
+  background-color: var(--ghe-page-bg) !important;
+}
+@media (prefers-color-scheme: light) {
+  html[data-ghe-redesign][data-color-mode="auto"] .AppHeader {
+    background-color: var(--ghe-page-bg) !important;
+  }
+}
+
+/* The Files-changed sticky toolbar paints its own background; blend it into
+   the page background (the hashed module class is matched by prefix). */
+html[data-ghe-redesign] [class*="PullRequestFilesToolbar-module__toolbar"] {
+  background-color: var(--ghe-page-bg) !important;
+}
+
+/* Each file-changed block as a card. It's a header (rounded top) plus a
+   bordered diff-body wrapper (rounded bottom); both take the card border
+   color and the block's outer corners use our radius. Hashed module classes
+   are matched by prefix. No overflow-hidden — the header is sticky. */
+
+/* The outer diff containers sit behind the header/body and paint a square
+   background that shows through the rounded corners; round them on all sides
+   to match. */
+html[data-ghe-redesign] [class*="PullRequestDiffsList-module__diffEntry"],
+html[data-ghe-redesign] [class*="Diff-module__diff__"] {
+  border-radius: var(--ghe-radius) !important;
+}
+html[data-ghe-redesign] [class*="DiffFileHeader-module__diff-file-header"] {
+  border-color: var(--ghe-card-border) !important;
+}
+/* The sticky header wrapper (opaque so content doesn't show through when it
+   sticks) and the header itself round their top corners so their backgrounds
+   follow the card's rounded top instead of poking past it. */
+html[data-ghe-redesign] [class*="Diff-module__diffHeaderWrapper"],
+html[data-ghe-redesign] [class*="DiffFileHeader-module__diff-file-header"] {
+  border-top-left-radius: var(--ghe-radius) !important;
+  border-top-right-radius: var(--ghe-radius) !important;
+}
+html[data-ghe-redesign] [class*="Diff-module__diff__"] .rounded-bottom-2 {
+  border-color: var(--ghe-card-border) !important;
+  border-bottom-left-radius: var(--ghe-radius) !important;
+  border-bottom-right-radius: var(--ghe-radius) !important;
+  /* Clip the diff table to this rounded shape so the last row's cell
+     backgrounds (e.g. the accent-muted hunk-expand row) don't poke past the
+     bottom corners. Safe for the sticky header — that lives in a sibling
+     wrapper, not in here. */
+  overflow: hidden !important;
+}
+/* Collapsed file: the header is the whole card, so both the sticky wrapper
+   (which paints the background) and the header itself round their bottom
+   corners too. The collapsed header carries a `collapsed` module class. */
+html[data-ghe-redesign] [class*="DiffFileHeader-module__collapsed"],
+html[data-ghe-redesign]
+  [class*="Diff-module__diffHeaderWrapper"]:has(
+    [class*="DiffFileHeader-module__collapsed"]
+  ) {
+  border-bottom-left-radius: var(--ghe-radius) !important;
+  border-bottom-right-radius: var(--ghe-radius) !important;
+}
+/* Targeted (clicked in the file tree): the block's border turns the muted
+   accent blue, replacing GitHub's own target highlight ring. */
+html[data-ghe-redesign] [class*="Diff-module__diffTargetable"][data-targeted="true"] {
+  box-shadow: none !important;
+}
+html[data-ghe-redesign]
+  [data-targeted="true"]
+  [class*="DiffFileHeader-module__diff-file-header"],
+html[data-ghe-redesign] [data-targeted="true"] .rounded-bottom-2 {
+  border-color: var(
+    --borderColor-accent-muted,
+    var(--color-accent-muted, #388bfd66)
+  ) !important;
 }
 
 /* 2. Sidebar sections as rounded cards: separators replaced by a uniform
@@ -360,4 +469,188 @@ html[data-ghe-redesign]
   [data-component="PH_Navigation"]
   [role="tab"][aria-selected="true"]:hover {
   background-color: var(--ghe-selected-hover-bg) !important;
+}
+
+/* 6. Timeline comments (the PR description and every conversation comment)
+   as cards: same bg, border, and radius as the other cards. The top-left
+   corner — the one nearest the author's avatar — keeps a quarter of the
+   radius. */
+html[data-ghe-redesign] .timeline-comment {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+  border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
+}
+
+/* The PR description (its .timeline-comment carries id="pullrequest-…",
+   unlike regular comments' "issuecomment-…") gets the muted accent border —
+   the same token GitHub already uses for the description header divider. */
+html[data-ghe-redesign] .timeline-comment[id^="pullrequest-"] {
+  border-color: var(
+    --borderColor-accent-muted,
+    var(--color-accent-muted, #388bfd66)
+  ) !important;
+}
+
+/* The speech caret pointing at the avatar (drawn with pseudo-elements on
+   the bubble's top-left edge) is gone. */
+html[data-ghe-redesign] .timeline-comment--caret::before,
+html[data-ghe-redesign] .timeline-comment--caret::after {
+  display: none !important;
+}
+
+/* The header's own top rounding follows the card's new corners, so its
+   shaded background can't paint square corners over the rounded card.
+   (-1px keeps it inside the card's 1px border; overflow:hidden is not an
+   option here — it would clip the header's dropdown menus.) */
+html[data-ghe-redesign] .timeline-comment .timeline-comment-header {
+  border-top-left-radius: calc(var(--ghe-radius) / 4 - 1px) !important;
+  border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+
+/* Minimized (hidden) comments: the bordered box is the <details> inside the
+   .minimized-comment wrapper (its <summary> is just the shaded title bar, and
+   the expanded body sits below it inside the same <details>) — so the card
+   look goes on the <details>, covering both the collapsed and expanded
+   states with a single border. */
+html[data-ghe-redesign] .minimized-comment > details {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+  border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
+}
+
+/* Its shaded title bar rounds to match the card's top corners — and, while
+   the details is collapsed, the bottom corners too (it's then the card's
+   bottom edge as well). */
+html[data-ghe-redesign] .minimized-comment > details > summary {
+  border-top-left-radius: calc(var(--ghe-radius) / 4 - 1px) !important;
+  border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+html[data-ghe-redesign] .minimized-comment > details:not([open]) > summary {
+  border-bottom-left-radius: calc(var(--ghe-radius) - 1px) !important;
+  border-bottom-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+
+/* Resolved review threads (the collapsed "conversation resolved" boxes). */
+html[data-ghe-redesign] .js-resolvable-timeline-thread-container[data-resolved="true"] {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+  border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
+}
+
+/* Their shaded header bar (the "N resolved/outdated comments" toggle row,
+   which carries bgColor-muted + rounded-top-2) rounds to match the card's
+   corners so its bg can't overflow them. While the thread is collapsed —
+   the container only gets the .open class when expanded — the bar is also
+   the card's bottom edge, so its bottom corners round too. */
+html[data-ghe-redesign]
+  .js-resolvable-timeline-thread-container[data-resolved="true"]
+  .js-toggle-outdated-comments {
+  border-top-left-radius: calc(var(--ghe-radius) / 4 - 1px) !important;
+  border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+html[data-ghe-redesign]
+  .js-resolvable-timeline-thread-container[data-resolved="true"]:not(.open)
+  .js-toggle-outdated-comments {
+  border-bottom-left-radius: calc(var(--ghe-radius) - 1px) !important;
+  border-bottom-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+
+/* The timeline's "N hidden items / Load more…" pagination: the <form>
+   itself paints the page background, while the Box holding the buttons is
+   a card like any other. The buttons' own color-bg-default goes transparent
+   so the card shows through. */
+html[data-ghe-redesign] .ajax-pagination-form {
+  background-color: var(--ghe-page-bg) !important;
+  /* The squiggly separator is a gray SVG background-image — an external
+     image can't take our colors, so it's removed and redrawn below. */
+  background-image: none !important;
+  position: relative;
+}
+
+/* The squiggly line, redrawn as a mask over a ::before layer so it's
+   painted in the card-border color of the current theme. */
+html[data-ghe-redesign] .ajax-pagination-form::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--ghe-card-border);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='10' viewBox='0 0 28 10'%3E%3Cpath d='M0 5 Q7 0 14 5 T28 5' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E")
+    repeat-x center;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='10' viewBox='0 0 28 10'%3E%3Cpath d='M0 5 Q7 0 14 5 T28 5' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E")
+    repeat-x center;
+}
+
+html[data-ghe-redesign] .ajax-pagination-form .Box {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+  /* Positioned so it paints on top of the ::before squiggle layer. */
+  position: relative;
+}
+
+/* The vertical connector lines between timeline items — drawn by Primer as
+   a muted ::before strip on each item — take the card-border color at 2px. */
+html[data-ghe-redesign] .TimelineItem::before {
+  background-color: var(--ghe-card-border) !important;
+  width: 2px !important;
+}
+
+/* The comment composer (new comment, inline replies, edit forms) as a card,
+   with its Write / Preview tabs as pills carrying the same bg, border, and
+   radius. Not overflow-hidden — the toolbar's Copilot/kebab menus overflow
+   the box on purpose. */
+html[data-ghe-redesign] .CommentBox {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+}
+/* The header's bottom edge is a 1px divider in the card border color, and
+   its top corners round (its background otherwise paints square corners over
+   the card's rounded top). -1px keeps the radius inside the card's border. */
+html[data-ghe-redesign] .CommentBox-header,
+html[data-ghe-redesign] .CommentBox .tabnav {
+  border-bottom: 1px solid var(--ghe-card-border) !important;
+  border-top-left-radius: calc(var(--ghe-radius) - 1px) !important;
+  border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+/* Only the active tab carries the card bg + border, with its bottom left
+   open (no bottom border, no bottom corners) so it reads as attached to the
+   composer below. The inactive tab has no chrome at all. */
+html[data-ghe-redesign] .CommentBox-header .tabnav-tab[aria-selected="true"] {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-bottom: 0 !important;
+  border-top-left-radius: var(--ghe-radius) !important;
+  border-top-right-radius: var(--ghe-radius) !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  margin-bottom: 0 !important;
+}
+html[data-ghe-redesign]
+  .CommentBox-header
+  .tabnav-tab:not([aria-selected="true"]) {
+  background-color: transparent !important;
+  border: 0 !important;
+}
+
+/* The actions strip below the timeline (deployments box etc.): the strip's
+   own background gives way to the page, and the box inside it is a card.
+   The classic checks box (#partial-pull-merging) also lives in this strip
+   but keeps its own accent styling — its id-based rules win on specificity. */
+html[data-ghe-redesign] .discussion-timeline-actions {
+  background-color: transparent !important;
+  /* Its thick top separator matches the connector lines: 2px, card-border. */
+  border-top: 2px solid var(--ghe-card-border) !important;
+}
+html[data-ghe-redesign] .discussion-timeline-actions .branch-action-item {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+}
+html[data-ghe-redesign] .ajax-pagination-form .ajax-pagination-btn {
+  background-color: transparent !important;
 }
