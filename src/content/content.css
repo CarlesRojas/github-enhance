@@ -41,10 +41,6 @@
   display: none !important;
 }
 
-/* Sticky sidebar is applied as inline styles from the content script (see
-   sidebar.ts) — those properties aren't managed by GitHub's script, so there
-   is nothing to fight. */
-
 /* Wider sidebar while the checks box lives in it. Keyed off an attribute on
    <html> (never touched by GitHub's React). GitHub's script sets the pane
    width as a non-important inline style; a stylesheet !important outranks
