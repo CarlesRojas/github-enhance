@@ -200,6 +200,12 @@ html[data-ghe-redesign] [class*="Diff-module__diff__"] {
 }
 html[data-ghe-redesign] [class*="DiffFileHeader-module__diff-file-header"] {
   border-color: var(--ghe-card-border) !important;
+}
+/* The sticky header wrapper (opaque so content doesn't show through when it
+   sticks) and the header itself round their top corners so their backgrounds
+   follow the card's rounded top instead of poking past it. */
+html[data-ghe-redesign] [class*="Diff-module__diffHeaderWrapper"],
+html[data-ghe-redesign] [class*="DiffFileHeader-module__diff-file-header"] {
   border-top-left-radius: var(--ghe-radius) !important;
   border-top-right-radius: var(--ghe-radius) !important;
 }
@@ -207,6 +213,11 @@ html[data-ghe-redesign] [class*="Diff-module__diff__"] .rounded-bottom-2 {
   border-color: var(--ghe-card-border) !important;
   border-bottom-left-radius: var(--ghe-radius) !important;
   border-bottom-right-radius: var(--ghe-radius) !important;
+  /* Clip the diff table to this rounded shape so the last row's cell
+     backgrounds (e.g. the accent-muted hunk-expand row) don't poke past the
+     bottom corners. Safe for the sticky header — that lives in a sibling
+     wrapper, not in here. */
+  overflow: hidden !important;
 }
 /* Collapsed file: its diff body is removed, so the header is the whole card
    and rounds its bottom corners too. */
@@ -594,12 +605,12 @@ html[data-ghe-redesign] .CommentBox {
   border: 1px solid var(--ghe-card-border) !important;
   border-radius: var(--ghe-radius) !important;
 }
-/* Drop the header's own separator so the tabs don't sit on a line, and
-   round its top corners (its background otherwise paints square corners over
-   the card's rounded top). -1px keeps it inside the card's 1px border. */
+/* The header's bottom edge is a 1px divider in the card border color, and
+   its top corners round (its background otherwise paints square corners over
+   the card's rounded top). -1px keeps the radius inside the card's border. */
 html[data-ghe-redesign] .CommentBox-header,
 html[data-ghe-redesign] .CommentBox .tabnav {
-  border-bottom: 0 !important;
+  border-bottom: 1px solid var(--ghe-card-border) !important;
   border-top-left-radius: calc(var(--ghe-radius) - 1px) !important;
   border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
 }
