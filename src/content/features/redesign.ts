@@ -35,7 +35,17 @@ function searchRoots(): HTMLElement[] {
   const merge = document.querySelector<HTMLElement>(
     '[data-testid="mergebox-partial"], #partial-pull-merging',
   );
-  if (merge?.parentElement) roots.push(merge.parentElement);
+  if (merge) {
+    // The "Still in progress?" block can be a sibling of a wrapper several
+    // levels above the mergebox — climb until an ancestor contains it.
+    // Dialogs are portaled outside the page layout, so they stay out of reach.
+    let root: HTMLElement | null = merge.parentElement;
+    for (let i = 0; root && i < 8; i++) {
+      if ((root.textContent || '').toLowerCase().includes('still in progress')) break;
+      root = root.parentElement;
+    }
+    roots.push(root ?? merge.parentElement ?? merge);
+  }
   return roots;
 }
 
