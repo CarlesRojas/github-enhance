@@ -486,9 +486,9 @@ html[data-ghe-redesign] .ajax-pagination-form::before {
   inset: 0;
   pointer-events: none;
   background-color: var(--ghe-card-border);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9' viewBox='0 0 16 9'%3E%3Cpath d='M0 7 4 2l4 5 4-5 4 5' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E")
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='10' viewBox='0 0 28 10'%3E%3Cpath d='M0 5 Q7 0 14 5 T28 5' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E")
     repeat-x center;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9' viewBox='0 0 16 9'%3E%3Cpath d='M0 7 4 2l4 5 4-5 4 5' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E")
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='10' viewBox='0 0 28 10'%3E%3Cpath d='M0 5 Q7 0 14 5 T28 5' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E")
     repeat-x center;
 }
 
