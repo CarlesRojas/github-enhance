@@ -389,15 +389,28 @@ html[data-ghe-redesign] .timeline-comment .timeline-comment-header {
   border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
 }
 
-/* Minimized (hidden) comments: the collapsed "This comment was marked as…"
-   bar is the <summary> inside the .minimized-comment wrapper — it takes the
-   same card look. When expanded, the revealed comment body is a regular
-   .timeline-comment and is covered above. */
-html[data-ghe-redesign] .minimized-comment details > summary {
+/* Minimized (hidden) comments: the bordered box is the <details> inside the
+   .minimized-comment wrapper (its <summary> is just the shaded title bar, and
+   the expanded body sits below it inside the same <details>) — so the card
+   look goes on the <details>, covering both the collapsed and expanded
+   states with a single border. */
+html[data-ghe-redesign] .minimized-comment > details {
   background-color: var(--ghe-card-bg) !important;
   border: 1px solid var(--ghe-card-border) !important;
   border-radius: var(--ghe-radius) !important;
   border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
+}
+
+/* Its shaded title bar rounds to match the card's top corners — and, while
+   the details is collapsed, the bottom corners too (it's then the card's
+   bottom edge as well). */
+html[data-ghe-redesign] .minimized-comment > details > summary {
+  border-top-left-radius: calc(var(--ghe-radius) / 4 - 1px) !important;
+  border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+html[data-ghe-redesign] .minimized-comment > details:not([open]) > summary {
+  border-bottom-left-radius: calc(var(--ghe-radius) - 1px) !important;
+  border-bottom-right-radius: calc(var(--ghe-radius) - 1px) !important;
 }
 
 /* Resolved review threads (the collapsed "conversation resolved" boxes). */
@@ -408,8 +421,10 @@ html[data-ghe-redesign] .js-resolvable-timeline-thread-container[data-resolved="
   border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
 }
 
-/* The timeline's "N hidden items / Load more…" pagination box: its own
-   default background gives way to the page background. */
+/* The timeline's "N hidden items / Load more…" pagination: the <form>
+   itself paints the background — it (and the buttons, which paint their own
+   color-bg-default) give way to the page background. */
+html[data-ghe-redesign] .ajax-pagination-form,
 html[data-ghe-redesign] .ajax-pagination-form .Box,
 html[data-ghe-redesign] .ajax-pagination-form .ajax-pagination-btn {
   background-color: var(--ghe-page-bg) !important;
