@@ -13,7 +13,7 @@ yourself, see `DEV.md` → *Load in Chrome*.)
 1. Bump `version` in `manifest.json` (and `package.json` to match).
 2. Build:
    ```bash
-   npm run build
+   npm install & npm run build
    ```
 3. Zip the **contents** of `dist/` (so `manifest.json` sits at the zip root)
    into `release/`, named with the version:
