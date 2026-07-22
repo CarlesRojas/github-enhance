@@ -78,32 +78,46 @@ html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutRoot"] {
    AND the current page is a pull request (attribute set by redesign.ts).
    Colors use GitHub's own tokens, so every native theme works automatically. */
 
+/* --- Redesign constants ---------------------------------------------------
+   Single source of truth for the redesign. Colors are built from GitHub's own
+   theme tokens, so they resolve per native theme automatically. */
 html[data-ghe-redesign] {
   /* Corner radius used throughout the redesign. */
   --ghe-radius: 12px;
+  /* Page background — the header's background color. */
+  --ghe-page-bg: var(--bgColor-inset, var(--color-canvas-inset, #f6f8fa));
+  /* Card background — the page's original background color. */
+  --ghe-card-bg: var(--bgColor-default, var(--color-canvas-default, #ffffff));
+  /* Card border — derived from the card color: slightly darker in light
+     themes… */
+  --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 92%, #000000);
+}
+
+/* …and slightly lighter in dark themes (including "auto" resolving dark). */
+html[data-ghe-redesign][data-color-mode="dark"] {
+  --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 88%, #ffffff);
+}
+@media (prefers-color-scheme: dark) {
+  html[data-ghe-redesign][data-color-mode="auto"] {
+    --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 88%, #ffffff);
+  }
 }
 
 /* 1. Page background matches the header's background. Containers between the
    body and the content are made transparent so the color shows through. */
 html[data-ghe-redesign] body {
-  background-color: var(
-    --bgColor-inset,
-    var(--color-canvas-inset, #f6f8fa)
-  ) !important;
+  background-color: var(--ghe-page-bg) !important;
 }
 html[data-ghe-redesign] .application-main,
 html[data-ghe-redesign] main {
   background: transparent !important;
 }
 
-/* 2. Sidebar sections as rounded cards: separators removed entirely, each
-   card keeps the page's original background color. */
+/* 2. Sidebar sections as rounded cards: separators replaced by a uniform
+   1px border, each card keeps the page's original background color. */
 html[data-ghe-redesign] .discussion-sidebar-item {
-  border: 0 !important;
-  background-color: var(
-    --bgColor-default,
-    var(--color-canvas-default, #ffffff)
-  ) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  background-color: var(--ghe-card-bg) !important;
   border-radius: var(--ghe-radius);
   padding: 12px !important;
   margin-bottom: 8px;
