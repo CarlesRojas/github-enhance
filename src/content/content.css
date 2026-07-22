@@ -83,7 +83,7 @@ html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutRoot"] {
    theme tokens, so they resolve per native theme automatically. */
 html[data-ghe-redesign] {
   /* Corner radius used throughout the redesign. */
-  --ghe-radius: 12px;
+  --ghe-radius: 16px;
   /* Page background — the header's background color. */
   --ghe-page-bg: var(--bgColor-inset, var(--color-canvas-inset, #f6f8fa));
   /* Card background — the page's original background color. */
