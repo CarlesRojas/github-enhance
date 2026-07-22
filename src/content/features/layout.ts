@@ -76,7 +76,9 @@ function lift(el: HTMLElement, inSidebar: boolean): void {
   if (inSidebar) {
     el.classList.add(IN_SIDEBAR);
     el.style.setProperty('margin-top', '0', 'important');
-    el.style.setProperty('margin-bottom', '0', 'important');
+    // Same gap the sidebar cards keep between each other (falls back to 8px
+    // when the redesign — which defines --ghe-gap — is off).
+    el.style.setProperty('margin-bottom', 'var(--ghe-gap, 8px)', 'important');
   }
 }
 

@@ -84,6 +84,8 @@ html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutRoot"] {
 html[data-ghe-redesign] {
   /* Corner radius used throughout the redesign. */
   --ghe-radius: 16px;
+  /* Vertical gap between sidebar cards. */
+  --ghe-gap: 8px;
   /* Page background — the header's background color. */
   --ghe-page-bg: var(--bgColor-inset, var(--color-canvas-inset, #f6f8fa));
   /* Card background — the page's original background color. */
@@ -120,7 +122,7 @@ html[data-ghe-redesign] .discussion-sidebar-item {
   background-color: var(--ghe-card-bg) !important;
   border-radius: var(--ghe-radius);
   padding: 12px !important;
-  margin-bottom: 8px;
+  margin-bottom: var(--ghe-gap);
 }
 
 /* 3. Checks / merge box as a card: same bg, radius, and border color on its
