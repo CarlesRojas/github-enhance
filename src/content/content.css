@@ -72,3 +72,211 @@ html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutWrapper"],
 html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutRoot"] {
   max-width: var(--ghe-page-max-width, 1280px) !important;
 }
+
+/* ============================ PR page redesign ============================
+   Active only while Appearance → "Enable Pull Request Page Redesign" is on
+   AND the current page is a pull request (attribute set by redesign.ts).
+   Colors use GitHub's own tokens, so every native theme works automatically. */
+
+/* --- Redesign constants ---------------------------------------------------
+   Single source of truth for the redesign. Colors are built from GitHub's own
+   theme tokens, so they resolve per native theme automatically. */
+html[data-ghe-redesign] {
+  /* Corner radius used throughout the redesign. */
+  --ghe-radius: 16px;
+  /* Vertical gap between sidebar cards. */
+  --ghe-gap: 8px;
+  /* Page background — the header's background color. */
+  --ghe-page-bg: var(--bgColor-inset, var(--color-canvas-inset, #f6f8fa));
+  /* Card background — the page's original background color. */
+  --ghe-card-bg: var(--bgColor-default, var(--color-canvas-default, #ffffff));
+  /* Card border — light themes: a bit darker than the PAGE bg (the card is
+     white on a gray page, so it must be darker than the gray to show)… */
+  --ghe-card-border: color-mix(in srgb, var(--ghe-page-bg) 90%, #000000);
+}
+
+/* …dark themes: slightly lighter than the card (including "auto" → dark). */
+html[data-ghe-redesign][data-color-mode="dark"] {
+  --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 88%, #ffffff);
+}
+@media (prefers-color-scheme: dark) {
+  html[data-ghe-redesign][data-color-mode="auto"] {
+    --ghe-card-border: color-mix(in srgb, var(--ghe-card-bg) 88%, #ffffff);
+  }
+}
+
+/* 1. Page background matches the header's background. Containers between the
+   body and the content are made transparent so the color shows through. */
+html[data-ghe-redesign] body {
+  background-color: var(--ghe-page-bg) !important;
+}
+html[data-ghe-redesign] .application-main,
+html[data-ghe-redesign] main {
+  background: transparent !important;
+}
+
+/* 2. Sidebar sections as rounded cards: separators replaced by a uniform
+   1px border, each card keeps the page's original background color. */
+html[data-ghe-redesign] .discussion-sidebar-item {
+  border: 1px solid var(--ghe-card-border) !important;
+  background-color: var(--ghe-card-bg) !important;
+  border-radius: var(--ghe-radius);
+  padding: 12px !important;
+  margin-bottom: var(--ghe-gap);
+}
+
+/* 3. Checks / merge box as a card: same bg, radius, and border color on its
+   outer bordered container (React mergebox and classic markup alike). */
+html[data-ghe-redesign] [data-testid="mergebox-partial"] .border,
+html[data-ghe-redesign] #partial-pull-merging .border,
+html[data-ghe-redesign] #partial-pull-merging .branch-action-item {
+  /* --ghe-accent is set per overall state below; without one the card keeps
+     its plain colors. */
+  background-color: color-mix(
+    in srgb,
+    var(--ghe-card-bg) 94%,
+    var(--ghe-accent, var(--ghe-card-bg))
+  ) !important;
+  border-color: var(--ghe-accent, var(--ghe-card-border)) !important;
+  border-radius: var(--ghe-radius) !important;
+  /* Clip children (e.g. the section headers' square hover backgrounds) to
+     the rounded corners. Menus/tooltips use the top layer, so they're safe. */
+  overflow: hidden;
+}
+
+/* While the checks box is still loading (its inner card hasn't rendered
+   yet), the wrapper takes the card's bg, border, and radius so the loading
+   state doesn't flash flat and square. Steps aside once the card exists. */
+html[data-ghe-redesign] [data-testid="mergebox-partial"]:not(:has(.border)),
+html[data-ghe-redesign] #partial-pull-merging:not(:has(.branch-action-item)) {
+  background-color: var(--ghe-card-bg);
+  border: 1px solid var(--ghe-card-border);
+  border-radius: var(--ghe-radius);
+  overflow: hidden;
+}
+/* The inner loading chrome paints its own square bg/border on top of the
+   rounded wrapper (its border gets corner-clipped by overflow:hidden) —
+   flatten it; the wrapper provides both instead. */
+html[data-ghe-redesign] [data-testid="mergebox-partial"]:not(:has(.border)) > *,
+html[data-ghe-redesign] [data-testid="mergebox-partial"]:not(:has(.border)) > * > *,
+html[data-ghe-redesign] #partial-pull-merging:not(:has(.branch-action-item)) > *,
+html[data-ghe-redesign] #partial-pull-merging:not(:has(.branch-action-item)) > * > * {
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
+/* Checks card state accents. The overall mergeability icon carries the
+   state's emphasis token in its inline style; mirror it — GitHub's colored
+   border for that state plus a slight tint of the same color on the card bg.
+   Green = success, orange/yellow = attention (queued, pending), red =
+   danger, orange = severe, purple = done. Neutral keeps the plain card. */
+html[data-ghe-redesign]
+  [data-testid="mergebox-partial"]:has([class*="mergeabilityIcon"][style*="success"]) {
+  --ghe-accent: var(--bgColor-success-emphasis, var(--color-success-emphasis, #1f883d));
+}
+html[data-ghe-redesign]
+  [data-testid="mergebox-partial"]:has([class*="mergeabilityIcon"][style*="attention"]) {
+  --ghe-accent: var(--bgColor-attention-emphasis, var(--color-attention-emphasis, #bf8700));
+}
+html[data-ghe-redesign]
+  [data-testid="mergebox-partial"]:has([class*="mergeabilityIcon"][style*="severe"]) {
+  --ghe-accent: var(--bgColor-severe-emphasis, var(--color-severe-emphasis, #bc4c00));
+}
+html[data-ghe-redesign]
+  [data-testid="mergebox-partial"]:has([class*="mergeabilityIcon"][style*="danger"]) {
+  --ghe-accent: var(--bgColor-danger-emphasis, var(--color-danger-emphasis, #cf222e));
+}
+html[data-ghe-redesign]
+  [data-testid="mergebox-partial"]:has([class*="mergeabilityIcon"][style*="done"]) {
+  --ghe-accent: var(--bgColor-done-emphasis, var(--color-done-emphasis, #8250df));
+}
+/* Classic markup: the clean state. */
+html[data-ghe-redesign]
+  #partial-pull-merging
+  .branch-action:has(.completeness-indicator-success) {
+  --ghe-accent: var(--bgColor-success-emphasis, var(--color-success-emphasis, #1f883d));
+}
+
+/* The merge-action footer (the "Merge when ready" strip) loses its muted
+   background so the card reads as one surface. */
+html[data-ghe-redesign] [data-testid="mergebox-partial"] .bgColor-muted[class*="rounded-bottom"],
+html[data-ghe-redesign] #partial-pull-merging .bgColor-muted[class*="rounded-bottom"] {
+  background-color: transparent !important;
+}
+
+/* Its bottom padding is dropped only while the relocated "Convert to draft"
+   slot below provides the spacing — on draft PRs the slot doesn't exist and
+   the footer keeps its own padding. */
+html[data-ghe-redesign]
+  [data-testid="mergebox-partial"]:has(.ghe-draft-slot)
+  .bgColor-muted[class*="rounded-bottom"],
+html[data-ghe-redesign]
+  #partial-pull-merging:has(.ghe-draft-slot)
+  .bgColor-muted[class*="rounded-bottom"] {
+  padding-bottom: 0 !important;
+}
+
+/* The expanded checks list inside the mergebox loses its horizontal padding
+   so rows span the full card width. */
+html[data-ghe-redesign]
+  [data-testid="mergebox-partial"]
+  [class*="MergeBoxExpandable-module__expandableContent"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* 4. "Convert to draft" relocated: its original block is hidden by the
+   content script and this proxy sits at the checks card's bottom-right. */
+html[data-ghe-redesign] .ghe-draft-slot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 12px 12px;
+}
+/* Styled with GitHub's default-button tokens so it matches its neighbours
+   in every native theme. */
+html[data-ghe-redesign] .ghe-draft-btn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border: 1px solid
+    var(
+      --button-default-borderColor-rest,
+      var(--borderColor-default, var(--color-border-default, #d0d7de))
+    );
+  border-radius: 6px;
+  background: var(
+    --button-default-bgColor-rest,
+    var(--color-btn-bg, #f6f8fa)
+  );
+  color: var(
+    --button-default-fgColor-rest,
+    var(--fgColor-default, var(--color-btn-text, #1f2328))
+  );
+  cursor: pointer;
+}
+html[data-ghe-redesign] .ghe-draft-btn:hover {
+  background: var(--button-default-bgColor-hover, var(--color-btn-hover-bg, #eff2f5));
+  border-color: var(
+    --button-default-borderColor-hover,
+    var(--borderColor-default, #d0d7de)
+  );
+}
+html[data-ghe-redesign] .ghe-draft-btn:active {
+  background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #e7ebef));
+}
+
+/* Its internal separators pick up the same border color. The outer card
+   itself also carries a borderColor-* utility class, so it is excluded here —
+   otherwise this rule (same specificity, later in the file) overrides the
+   card's state accent border. */
+html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-bottom,
+html[data-ghe-redesign] [data-testid="mergebox-partial"] .border-top,
+html[data-ghe-redesign] [data-testid="mergebox-partial"] [class*="borderColor"]:not(.border),
+html[data-ghe-redesign] #partial-pull-merging .border-bottom,
+html[data-ghe-redesign] #partial-pull-merging .border-top,
+html[data-ghe-redesign]
+  #partial-pull-merging
+  [class*="color-border"]:not(.border):not(.branch-action-item) {
+  border-color: var(--ghe-card-border) !important;
+}

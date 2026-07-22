@@ -9,6 +9,7 @@ import { applySidebar } from './features/sidebar';
 import { applyHideButtons } from './features/hideComments';
 import { applyLayout } from './features/layout';
 import { applyNotices } from './features/notices';
+import { applyRedesign } from './features/redesign';
 
 let current: Settings | null = null;
 let scheduled = false;
@@ -32,6 +33,7 @@ function applyAll(settings: Settings): void {
     run('hideComments', () => applyHideButtons(settings));
     run('layout', () => applyLayout(settings));
     run('notices', () => applyNotices(settings));
+    run('redesign', () => applyRedesign(settings));
   } finally {
     connectObserver();
   }

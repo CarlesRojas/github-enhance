@@ -10,6 +10,7 @@
 // any state restores correctly without a reload.
 
 import { PAGE_WIDTH_DEFAULT, Settings } from '../../shared/settings';
+import { isPRPage } from '../util';
 
 const SIG = 'data-ghe-layout';
 const MOVED = 'data-ghe-moved';
@@ -38,11 +39,6 @@ function setVar(name: string, value: string | null): void {
   } else if (style.getPropertyValue(name) !== value) {
     style.setProperty(name, value);
   }
-}
-
-/** True on pull-request pages (conversation, files, checks tabs). */
-function isPRPage(): boolean {
-  return /^\/[^/]+\/[^/]+\/pull\/\d+/.test(location.pathname);
 }
 
 /** Publish the slider values as CSS variables consumed by content.css. */
@@ -80,7 +76,10 @@ function lift(el: HTMLElement, inSidebar: boolean): void {
   if (inSidebar) {
     el.classList.add(IN_SIDEBAR);
     el.style.setProperty('margin-top', '0', 'important');
-    el.style.setProperty('margin-bottom', '0', 'important');
+    // Match the visible gap between sidebar cards: their spacing stacks our
+    // --ghe-gap margin on top of GitHub's own native item spacing, so the
+    // lifted box (not a native sidebar item) needs twice the gap to line up.
+    el.style.setProperty('margin-bottom', 'calc(var(--ghe-gap, 8px) * 2)', 'important');
   }
 }
 
