@@ -472,11 +472,32 @@ html[data-ghe-redesign]
    so the card shows through. */
 html[data-ghe-redesign] .ajax-pagination-form {
   background-color: var(--ghe-page-bg) !important;
+  /* The squiggly separator is a gray SVG background-image — an external
+     image can't take our colors, so it's removed and redrawn below. */
+  background-image: none !important;
+  position: relative;
 }
+
+/* The squiggly line, redrawn as a mask over a ::before layer so it's
+   painted in the card-border color of the current theme. */
+html[data-ghe-redesign] .ajax-pagination-form::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--ghe-card-border);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9' viewBox='0 0 16 9'%3E%3Cpath d='M0 7 4 2l4 5 4-5 4 5' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E")
+    repeat-x center;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9' viewBox='0 0 16 9'%3E%3Cpath d='M0 7 4 2l4 5 4-5 4 5' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E")
+    repeat-x center;
+}
+
 html[data-ghe-redesign] .ajax-pagination-form .Box {
   background-color: var(--ghe-card-bg) !important;
   border: 1px solid var(--ghe-card-border) !important;
   border-radius: var(--ghe-radius) !important;
+  /* Positioned so it paints on top of the ::before squiggle layer. */
+  position: relative;
 }
 html[data-ghe-redesign] .ajax-pagination-form .ajax-pagination-btn {
   background-color: transparent !important;
