@@ -77,3 +77,16 @@ export function formatDate(date: Date, pattern: string): string {
     })
     .join('');
 }
+
+/**
+ * Remove the year token (YY–YYYY) and one adjacent separator from a pattern,
+ * e.g. "MMM D, YYYY" -> "MMM D", "YYYY-MM-DD HH:mm" -> "MM-DD HH:mm".
+ */
+export function stripYear(pattern: string): string {
+  return pattern
+    .replace(/^Y{2,4}[\s,/.\-]+/, '') // leading "YYYY-" / "YYYY "
+    .replace(/[\s,/.\-]+Y{2,4}/g, '') // " YYYY" / ", YYYY" / "/YYYY"
+    .replace(/Y{2,4}/g, '') // any bare leftover
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}

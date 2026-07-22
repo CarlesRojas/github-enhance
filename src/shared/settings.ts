@@ -1,6 +1,8 @@
 // Settings schema shared by the popup UI and the content scripts.
 // Persisted in chrome.storage.sync under a single key.
 
+import { stripYear } from './formatDate';
+
 export type SidebarSectionKey =
   | 'reviewers'
   | 'assignees'
@@ -33,12 +35,7 @@ export const SIDEBAR_SECTIONS: SidebarSectionDef[] = [
   { key: 'labels', label: 'Labels', match: ['label'] },
   { key: 'projects', label: 'Projects', match: ['project'] },
   { key: 'milestone', label: 'Milestone', match: ['milestone'] },
-  {
-    key: 'development',
-    label: 'Development',
-    match: ['development'],
-    containers: ['#partial-pull-request-development', '[data-target="development-menu.summary"]'],
-  },
+  { key: 'development', label: 'Development', match: ['development'] },
   {
     key: 'notifications',
     label: 'Notifications',
@@ -89,6 +86,13 @@ export interface Settings {
     enabled: boolean;
     dateFormat: string; // a DATE_FORMATS key
     timeFormat: string; // a TIME_FORMATS key ('none' for date only)
+    hideCurrentYear: boolean; // drop the year when it's the current year
+  };
+  layout: {
+    checksTop: boolean; // move the checks / merge box above the timeline
+    composeTop: boolean; // move the "Add a comment" box above the timeline
+    invertTimeline: boolean; // reverse the timeline items (newest first)
+    hideNotices: boolean; // hide the Community Guidelines + ProTip notes
   };
   sidebar: {
     /** section key -> visible (true) / hidden (false). */
@@ -97,18 +101,20 @@ export interface Settings {
   hideComments: {
     enabled: boolean;
   };
-  timeline: {
-    enabled: boolean;
-  };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  dates: { enabled: true, dateFormat: 'iso', timeFormat: '24' },
+  dates: { enabled: true, dateFormat: 'iso', timeFormat: '24', hideCurrentYear: false },
+  layout: {
+    checksTop: false,
+    composeTop: false,
+    invertTimeline: false,
+    hideNotices: false,
+  },
   sidebar: {
     sections: Object.fromEntries(SIDEBAR_SECTIONS.map((s) => [s.key, true])),
   },
   hideComments: { enabled: true },
-  timeline: { enabled: false },
 };
 
 const STORAGE_KEY = 'settings';
@@ -118,11 +124,11 @@ export function mergeSettings(partial: unknown): Settings {
   const p = (partial ?? {}) as Partial<Settings>;
   return {
     dates: { ...DEFAULT_SETTINGS.dates, ...(p.dates ?? {}) },
+    layout: { ...DEFAULT_SETTINGS.layout, ...(p.layout ?? {}) },
     sidebar: {
       sections: { ...DEFAULT_SETTINGS.sidebar.sections, ...(p.sidebar?.sections ?? {}) },
     },
     hideComments: { ...DEFAULT_SETTINGS.hideComments, ...(p.hideComments ?? {}) },
-    timeline: { ...DEFAULT_SETTINGS.timeline, ...(p.timeline ?? {}) },
   };
 }
 
@@ -134,6 +140,15 @@ export function effectiveDatePattern(s: Settings): string {
   const time =
     TIME_FORMATS.find((f) => f.key === s.dates.timeFormat)?.pattern ?? '';
   return time ? `${date} ${time}` : date;
+}
+
+/** The pattern for a specific date, honouring the "hide current year" option. */
+export function resolveDatePattern(s: Settings, date: Date, now: Date): string {
+  const pattern = effectiveDatePattern(s);
+  if (s.dates.hideCurrentYear && date.getFullYear() === now.getFullYear()) {
+    return stripYear(pattern);
+  }
+  return pattern;
 }
 
 export async function loadSettings(): Promise<Settings> {

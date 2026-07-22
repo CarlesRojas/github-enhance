@@ -61,13 +61,15 @@ export function Select(props: {
   value: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
-  label?: string;
+  ariaLabel?: string;
+  disabled?: boolean;
 }) {
-  const select = (
+  return (
     <select
       className="select"
       value={props.value}
-      aria-label={props.label}
+      disabled={props.disabled}
+      aria-label={props.ariaLabel}
       onChange={(e) => props.onChange(e.target.value)}
     >
       {props.options.map((o) => (
@@ -76,33 +78,5 @@ export function Select(props: {
         </option>
       ))}
     </select>
-  );
-  if (!props.label) return select;
-  return (
-    <label className="field">
-      <span className="field-label">{props.label}</span>
-      {select}
-    </label>
-  );
-}
-
-export function TextField(props: {
-  value: string;
-  onChange: (value: string) => void;
-  label?: string;
-  placeholder?: string;
-}) {
-  return (
-    <label className="field">
-      {props.label && <span className="field-label">{props.label}</span>}
-      <input
-        className="text-input"
-        type="text"
-        value={props.value}
-        placeholder={props.placeholder}
-        spellCheck={false}
-        onChange={(e) => props.onChange(e.target.value)}
-      />
-    </label>
   );
 }

@@ -7,8 +7,8 @@ import {
   SIDEBAR_SECTIONS,
   Settings,
   TIME_FORMATS,
-  effectiveDatePattern,
   loadSettings,
+  resolveDatePattern,
   saveSettings,
 } from '../shared/settings';
 import { formatDate } from '../shared/formatDate';
@@ -60,6 +60,7 @@ interface GroupProps {
 
 function DatesGroup({ settings, update }: GroupProps) {
   const d = settings.dates;
+  const now = new Date();
 
   return (
     <Group
@@ -85,7 +86,8 @@ function DatesGroup({ settings, update }: GroupProps) {
           <Select
             value={d.dateFormat}
             options={DATE_FORMATS.map((f) => ({ value: f.key, label: f.label }))}
-            label="Date format"
+            ariaLabel="Date format"
+            disabled={!d.enabled}
             onChange={(v) => update((s) => (s.dates.dateFormat = v))}
           />
         }
@@ -99,8 +101,24 @@ function DatesGroup({ settings, update }: GroupProps) {
           <Select
             value={d.timeFormat}
             options={TIME_FORMATS.map((f) => ({ value: f.key, label: f.label }))}
-            label="Time format"
+            ariaLabel="Time format"
+            disabled={!d.enabled}
             onChange={(v) => update((s) => (s.dates.timeFormat = v))}
+          />
+        }
+      />
+
+      <Row
+        label="Hide year when current"
+        description="Omit the year for dates in the current year."
+        indented
+        disabled={!d.enabled}
+        control={
+          <Toggle
+            checked={d.hideCurrentYear}
+            disabled={!d.enabled}
+            label="Hide year when current"
+            onChange={(v) => update((s) => (s.dates.hideCurrentYear = v))}
           />
         }
       />
@@ -109,9 +127,79 @@ function DatesGroup({ settings, update }: GroupProps) {
         <div className="preview">
           <span className="from">yesterday</span>
           <span className="arrow">→</span>
-          <span className="to">{formatDate(new Date(), effectiveDatePattern(settings))}</span>
+          <span className="to">{formatDate(now, resolveDatePattern(settings, now, now))}</span>
         </div>
       )}
+    </Group>
+  );
+}
+
+function LayoutGroup({ settings, update }: GroupProps) {
+  const l = settings.layout;
+  return (
+    <Group
+      title="Pull Request Layout"
+      description="Rearrange the conversation. Applied on load — reload a PR after changing."
+    >
+      <Row
+        label={
+          <>
+            Move checks to top
+            <span className="tag">Experimental</span>
+          </>
+        }
+        description="Show the checks / merge box above the timeline."
+        control={
+          <Toggle
+            checked={l.checksTop}
+            label="Move checks to top"
+            onChange={(v) => update((s) => (s.layout.checksTop = v))}
+          />
+        }
+      />
+      <Row
+        label={
+          <>
+            Move comment box to top
+            <span className="tag">Experimental</span>
+          </>
+        }
+        description="Show the “Add a comment” box above the timeline."
+        control={
+          <Toggle
+            checked={l.composeTop}
+            label="Move comment box to top"
+            onChange={(v) => update((s) => (s.layout.composeTop = v))}
+          />
+        }
+      />
+      <Row
+        label={
+          <>
+            Invert timeline
+            <span className="tag">Experimental</span>
+          </>
+        }
+        description="Order timeline items newest first."
+        control={
+          <Toggle
+            checked={l.invertTimeline}
+            label="Invert timeline"
+            onChange={(v) => update((s) => (s.layout.invertTimeline = v))}
+          />
+        }
+      />
+      <Row
+        label="Hide guidelines & ProTip"
+        description="Hide the Community Guidelines reminder and the ProTip line."
+        control={
+          <Toggle
+            checked={l.hideNotices}
+            label="Hide guidelines & ProTip"
+            onChange={(v) => update((s) => (s.layout.hideNotices = v))}
+          />
+        }
+      />
     </Group>
   );
 }
@@ -164,35 +252,6 @@ function CommentsGroup({ settings, update }: GroupProps) {
   );
 }
 
-function TimelineGroup({ settings, update }: GroupProps) {
-  return (
-    <Group
-      title="Timeline"
-      description="Reorder the PR conversation: description, checks, then the compose box above a newest-first timeline."
-    >
-      <Row
-        label={
-          <>
-            Reverse timeline order
-            <span className="tag">Experimental</span>
-          </>
-        }
-        control={
-          <Toggle
-            checked={settings.timeline.enabled}
-            label="Reverse timeline order"
-            onChange={(v) => update((s) => (s.timeline.enabled = v))}
-          />
-        }
-      />
-      <p className="hint">
-        Rearranges the conversation on load. If a page looks off, turn this off
-        and reload.
-      </p>
-    </Group>
-  );
-}
-
 function App() {
   const { settings, update } = useSettings();
 
@@ -207,9 +266,9 @@ function App() {
       {settings && (
         <>
           <DatesGroup settings={settings} update={update} />
+          <LayoutGroup settings={settings} update={update} />
           <SidebarGroup settings={settings} update={update} />
           <CommentsGroup settings={settings} update={update} />
-          <TimelineGroup settings={settings} update={update} />
         </>
       )}
     </div>

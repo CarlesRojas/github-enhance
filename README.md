@@ -23,13 +23,31 @@ week”, …) with an absolute date & time.
   weekday variants…).
 - **Time format** dropdown (24-hour, 12-hour, with/without seconds, or
   **No time** for date-only).
+- **Hide year when current** — omit the year for dates in the current year.
 - Live preview in the popup.
 
 The original `<relative-time>` element is only hidden (not destroyed) and a
 formatted sibling is shown next to it, so turning the feature off restores the
 native behavior instantly — no reload.
 
-### 2. Pull Request Sidebar
+### 2. Pull Request Layout (experimental)
+
+Rearrange the PR conversation. Three independent toggles, plus a declutter
+option:
+
+- **Move checks to top** — the checks / merge box above the timeline.
+- **Move comment box to top** — the “Add a comment” box above the timeline.
+- **Invert timeline** — timeline items newest-first, in place.
+- **Hide guidelines & ProTip** — hide the Community Guidelines reminder and the
+  “ProTip!” line.
+
+With the three layout toggles on, the order becomes: description, checks,
+compose box, then the reversed timeline. Every moved node leaves a placeholder
+at its original spot, so any combination reconciles back without a reload. The
+checks box is React-managed, so it *may* snap back if GitHub re-renders it —
+hence experimental.
+
+### 3. Pull Request Sidebar
 
 Hide sidebar sections you don’t use on PR/issue pages.
 
@@ -37,12 +55,12 @@ Hide sidebar sections you don’t use on PR/issue pages.
   Projects, Milestone, Development, Notifications, Participants, Lock
   conversation** — all shown by default; turn one off to hide it.
 - Sections are matched by known container selectors and heading text, so this
-  keeps working when GitHub reorders them. Re-enabling a section restores it
-  without a reload.
-- *Projects* only appears on repos with Projects enabled. *Lock conversation*
-  hides just that control, not a neighbouring Pin button.
+  keeps working when GitHub reorders them. Hiding uses `!important` to beat
+  Primer utilities like `.d-block`. Re-enabling a section restores it without a
+  reload.
+- *Lock conversation* hides just that control, not a neighbouring Pin button.
 
-### 3. Comments — Hide as outdated
+### 4. Comments — Hide as outdated
 
 Adds a **Hide** button to the right of every pull-request comment that
 minimizes it as *Outdated* in one click — the same result as
@@ -52,19 +70,6 @@ minimizes it as *Outdated* in one click — the same result as
   falling back to driving the `…` menu if the form isn’t inline.
 - The button never appears on the PR/issue description or already-hidden
   comments.
-
-### 4. Timeline — reverse order (experimental)
-
-Reorders the PR conversation to read newest-first:
-
-1. **Description** stays at the top (its own section).
-2. **Checks / merge box** moves down.
-3. **Add a comment** box.
-4. The rest of the **timeline, reversed** (newest first).
-
-Every moved node leaves a placeholder at its original spot, so turning the
-feature off puts the page back. It’s marked experimental because it depends on
-GitHub’s conversation layout; if a page ever looks off, turn it off and reload.
 
 ## Build
 

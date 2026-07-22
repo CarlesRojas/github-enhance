@@ -180,9 +180,9 @@ body {
 }
 
 /* Form controls */
-.select,
-.text-input {
-  width: 100%;
+.select {
+  width: 162px;
+  max-width: 162px;
   padding: 5px 8px;
   font: inherit;
   font-size: 12px;
@@ -192,24 +192,10 @@ body {
   border-radius: 6px;
 }
 
-.select:focus,
-.text-input:focus {
+.select:focus {
   outline: none;
   border-color: var(--ghe-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--ghe-accent) 30%, transparent);
-}
-
-.field {
-  display: block;
-  padding: 6px 0;
-}
-
-.field-label {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ghe-fg-muted);
 }
 
 .preview {

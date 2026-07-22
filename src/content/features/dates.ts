@@ -8,7 +8,7 @@
 // formatted text. This is fully reversible: remove the span, unhide the
 // original.
 
-import { Settings, effectiveDatePattern } from '../../shared/settings';
+import { Settings, resolveDatePattern } from '../../shared/settings';
 import { formatDate } from '../../shared/formatDate';
 
 const SELECTOR = 'relative-time, time-ago, local-time';
@@ -37,7 +37,7 @@ export function applyDates(settings: Settings): void {
     return;
   }
 
-  const pattern = effectiveDatePattern(settings);
+  const now = new Date();
 
   elements.forEach((el) => {
     const raw = el.getAttribute('datetime') || el.getAttribute('title');
@@ -45,7 +45,7 @@ export function applyDates(settings: Settings): void {
     const date = new Date(raw);
     if (Number.isNaN(date.getTime())) return;
 
-    const text = formatDate(date, pattern);
+    const text = formatDate(date, resolveDatePattern(settings, date, now));
     const title = el.getAttribute('title') || date.toString();
 
     let span = siblingSpan(el);

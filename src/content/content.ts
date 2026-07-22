@@ -7,7 +7,8 @@ import { Settings, loadSettings, onSettingsChanged } from '../shared/settings';
 import { applyDates } from './features/dates';
 import { applySidebar } from './features/sidebar';
 import { applyHideButtons } from './features/hideComments';
-import { applyTimeline } from './features/timeline';
+import { applyLayout } from './features/layout';
+import { applyNotices } from './features/notices';
 
 let current: Settings | null = null;
 let scheduled = false;
@@ -29,7 +30,8 @@ function applyAll(settings: Settings): void {
     run('dates', () => applyDates(settings));
     run('sidebar', () => applySidebar(settings));
     run('hideComments', () => applyHideButtons(settings));
-    run('timeline', () => applyTimeline(settings));
+    run('layout', () => applyLayout(settings));
+    run('notices', () => applyNotices(settings));
   } finally {
     connectObserver();
   }

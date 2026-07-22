@@ -60,8 +60,14 @@ function locate(sec: SidebarSectionDef): HTMLElement[] {
 }
 
 function setVisible(el: HTMLElement, visible: boolean): void {
-  const desired = visible ? '' : 'none';
-  if (el.style.display !== desired) el.style.display = desired;
+  if (visible) {
+    // Only clear the inline override we set; leave any pre-existing value.
+    if (el.style.getPropertyValue('display') === 'none') el.style.removeProperty('display');
+  } else {
+    // `!important` is required to beat Primer utilities like `.d-block`
+    // (display: block !important), which several sidebar items carry.
+    el.style.setProperty('display', 'none', 'important');
+  }
 }
 
 export function applySidebar(settings: Settings): void {
