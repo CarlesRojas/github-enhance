@@ -112,9 +112,9 @@ html[data-ghe-sticky-sidebar]
   [class*="prc-PageLayout-PaneWrapper"]:has(#pr-conversation-sidebar),
 html[data-ghe-sticky-sidebar] .Layout-sidebar:has(#partial-discussion-sidebar) {
   position: sticky !important;
-  top: var(--ghe-sticky-top, 64px) !important;
+  top: var(--ghe-sticky-top, 76px) !important;
   align-self: flex-start !important;
-  max-height: calc(100vh - var(--ghe-sticky-top, 64px) - 16px) !important;
+  max-height: calc(100vh - var(--ghe-sticky-top, 76px) - 16px) !important;
   overflow-y: auto !important;
   padding-right: 8px !important;
 }
