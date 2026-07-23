@@ -26,9 +26,74 @@ const IN_SIDEBAR = 'ghe-checks-in-sidebar';
  */
 const WIDE_ATTR = 'data-ghe-wide-sidebar';
 const PAGE_ATTR = 'data-ghe-page-width';
+const STICKY_ATTR = 'data-ghe-sticky-sidebar';
+const FOOTER_ATTR = 'data-ghe-hide-footer';
 
 function setWideSidebar(on: boolean): void {
   document.documentElement.toggleAttribute(WIDE_ATTR, on);
+}
+
+/** Breathing room between the floating header's bottom and the sidebar's top. */
+const STICKY_GAP = 16;
+
+// Sticky-header measurement state. GitHub's floating PR header only gains its
+// real height once it's marked "stuck" on scroll — a class change our
+// childList-only MutationObserver never sees. So we cache the height the first
+// time it's measurable and re-measure on scroll to catch it the instant it
+// appears, rather than waiting for an unrelated mutation.
+let stickyOn = false;
+let stickyHeaderHeight = 0;
+let stickyScrollHooked = false;
+let stickyScrollRaf = 0;
+
+function setStickySidebar(on: boolean): void {
+  document.documentElement.toggleAttribute(STICKY_ATTR, on);
+}
+
+/** Measure GitHub's floating PR header, caching the last real (>0) height. */
+function measureStickyHeader(): number {
+  const header = document.querySelector<HTMLElement>(
+    '[class*="StickyPullRequestHeader-module__prHeader"]',
+  );
+  const h = header ? Math.round(header.getBoundingClientRect().height) : 0;
+  if (h > 0) stickyHeaderHeight = h;
+  return stickyHeaderHeight;
+}
+
+/**
+ * Publish the offset the sticky sidebar sits below: the height of GitHub's own
+ * floating pull-request header plus a gap. Cleared when sticky is off; falls
+ * back to the CSS default until the header has been measured once (it only has
+ * a real height while stuck).
+ */
+function publishStickyTop(): void {
+  if (!stickyOn) {
+    setVar('--ghe-sticky-top', null);
+    return;
+  }
+  const h = measureStickyHeader();
+  setVar('--ghe-sticky-top', h > 0 ? `${h + STICKY_GAP}px` : null);
+}
+
+/**
+ * Re-measure on scroll (rAF-throttled) so the offset is correct the moment the
+ * floating header becomes stuck, instead of lagging until the next unrelated
+ * DOM mutation. Registered once; a no-op while sticky is off.
+ */
+function hookStickyScroll(): void {
+  if (stickyScrollHooked) return;
+  stickyScrollHooked = true;
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!stickyOn || stickyScrollRaf) return;
+      stickyScrollRaf = requestAnimationFrame(() => {
+        stickyScrollRaf = 0;
+        publishStickyTop();
+      });
+    },
+    { passive: true },
+  );
 }
 
 /** Set a CSS custom property on <html> only when the value actually changed. */
@@ -181,11 +246,17 @@ function insertAfterDescription(
 export function applyLayout(settings: Settings): void {
   applyWidthVars(settings, isPRPage());
 
+  // Footer hiding is site-wide, so toggle it before any PR-page early return.
+  document.documentElement.toggleAttribute(FOOTER_ATTR, settings.layout.hideFooter);
+
   const discussion = document.querySelector<HTMLElement>('.js-discussion');
   if (!discussion) {
     // GitHub navigates without full reloads, so attributes on <html> survive
     // leaving the PR page — clear them or other pages' sidebars get widened.
     setWideSidebar(false);
+    setStickySidebar(false);
+    stickyOn = false;
+    publishStickyTop();
     return;
   }
 
@@ -194,6 +265,12 @@ export function applyLayout(settings: Settings): void {
   // controls the sidebar size on its own. Re-evaluated on every pass (incl.
   // resize), so it turns off when the sidebar stacks at narrow widths.
   setWideSidebar(isPRPage() && sidebarIsColumn());
+  // Sticky sidebar only makes sense while it's a column; behind its own toggle.
+  const sticky = settings.layout.stickySidebar && isPRPage() && sidebarIsColumn();
+  stickyOn = sticky;
+  setStickySidebar(sticky);
+  if (sticky) hookStickyScroll();
+  publishStickyTop();
 
   const checks = checksPlacement(settings);
   const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';
