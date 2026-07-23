@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GitHub Enhance",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Visually enhance GitHub: absolute dates, sidebar controls, one-click hide-as-outdated, and timeline reordering.",
   "action": {
     "default_popup": "popup.html",
