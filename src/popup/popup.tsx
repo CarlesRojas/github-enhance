@@ -196,6 +196,22 @@ function LayoutGroup({ settings, update }: GroupProps) {
         }
       />
       <Row
+        label={
+          <>
+            Sticky sidebar
+            <span className="tag">Experimental</span>
+          </>
+        }
+        description="Keep the PR sidebar in view while the page scrolls."
+        control={
+          <Toggle
+            checked={l.stickySidebar}
+            label="Sticky sidebar"
+            onChange={(v) => update((s) => (s.layout.stickySidebar = v))}
+          />
+        }
+      />
+      <Row
         label="Page width"
         description="Max width of the page content."
         control={
@@ -234,6 +250,17 @@ function LayoutGroup({ settings, update }: GroupProps) {
             checked={l.hideNotices}
             label="Hide guidelines & ProTip"
             onChange={(v) => update((s) => (s.layout.hideNotices = v))}
+          />
+        }
+      />
+      <Row
+        label="Hide footer"
+        description="Hide GitHub's page footer."
+        control={
+          <Toggle
+            checked={l.hideFooter}
+            label="Hide footer"
+            onChange={(v) => update((s) => (s.layout.hideFooter = v))}
           />
         }
       />

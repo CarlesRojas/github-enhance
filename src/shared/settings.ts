@@ -100,6 +100,8 @@ export interface Settings {
     checksTop: boolean;
     composeTop: boolean; // move the "Add a comment" box above the timeline
     hideNotices: boolean; // hide the Community Guidelines + ProTip notes
+    hideFooter: boolean; // hide GitHub's page footer
+    stickySidebar: boolean; // keep the PR sidebar in view while scrolling
     /** Sidebar width (% of the content area) while checks live in it. */
     sidebarWidthPct: number;
     /** Max page width in px; PAGE_WIDTH_DEFAULT means GitHub's default. */
@@ -119,13 +121,15 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  dates: { enabled: true, dateFormat: 'iso', timeFormat: '24', hideCurrentYear: false },
+  dates: { enabled: true, dateFormat: 'iso', timeFormat: '24', hideCurrentYear: true },
   layout: {
-    checksTop: false,
+    checksTop: true,
     composeTop: false,
     hideNotices: true,
+    hideFooter: true,
+    stickySidebar: false,
     sidebarWidthPct: 40,
-    pageMaxWidth: 1280,
+    pageMaxWidth: 2000,
   },
   sidebar: {
     sections: Object.fromEntries(SIDEBAR_SECTIONS.map((s) => [s.key, true])),

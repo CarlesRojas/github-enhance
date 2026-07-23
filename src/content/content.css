@@ -101,6 +101,28 @@ html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutRoot"] {
   max-width: var(--ghe-page-max-width, 1280px) !important;
 }
 
+/* Sticky sidebar: keep the PR conversation sidebar in view as the page
+   scrolls. It sticks just below the top and, if taller than the viewport,
+   scrolls on its own. align-self stops the flex child from stretching to the
+   container's full height, which would otherwise defeat sticky. Same :has()
+   pin to the PR conversation sidebar as the wide-sidebar rule. */
+html[data-ghe-sticky-sidebar]
+  [class*="prc-PageLayout-PaneWrapper"]:has(#pr-conversation-sidebar),
+html[data-ghe-sticky-sidebar] .Layout-sidebar:has(#partial-discussion-sidebar) {
+  position: sticky !important;
+  top: 16px !important;
+  align-self: flex-start !important;
+  max-height: calc(100vh - 32px) !important;
+  overflow-y: auto !important;
+}
+
+/* Hide GitHub's page footer (site-wide) when the option is on. */
+html[data-ghe-hide-footer] .footer,
+html[data-ghe-hide-footer] footer[role="contentinfo"],
+html[data-ghe-hide-footer] .Footer {
+  display: none !important;
+}
+
 /* ============================ PR page redesign ============================
    Active only while Appearance → "Enable Pull Request Page Redesign" is on
    AND the current page is a pull request (attribute set by redesign.ts).

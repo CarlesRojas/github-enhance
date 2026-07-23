@@ -26,9 +26,15 @@ const IN_SIDEBAR = 'ghe-checks-in-sidebar';
  */
 const WIDE_ATTR = 'data-ghe-wide-sidebar';
 const PAGE_ATTR = 'data-ghe-page-width';
+const STICKY_ATTR = 'data-ghe-sticky-sidebar';
+const FOOTER_ATTR = 'data-ghe-hide-footer';
 
 function setWideSidebar(on: boolean): void {
   document.documentElement.toggleAttribute(WIDE_ATTR, on);
+}
+
+function setStickySidebar(on: boolean): void {
+  document.documentElement.toggleAttribute(STICKY_ATTR, on);
 }
 
 /** Set a CSS custom property on <html> only when the value actually changed. */
@@ -181,11 +187,15 @@ function insertAfterDescription(
 export function applyLayout(settings: Settings): void {
   applyWidthVars(settings, isPRPage());
 
+  // Footer hiding is site-wide, so toggle it before any PR-page early return.
+  document.documentElement.toggleAttribute(FOOTER_ATTR, settings.layout.hideFooter);
+
   const discussion = document.querySelector<HTMLElement>('.js-discussion');
   if (!discussion) {
     // GitHub navigates without full reloads, so attributes on <html> survive
     // leaving the PR page — clear them or other pages' sidebars get widened.
     setWideSidebar(false);
+    setStickySidebar(false);
     return;
   }
 
@@ -194,6 +204,8 @@ export function applyLayout(settings: Settings): void {
   // controls the sidebar size on its own. Re-evaluated on every pass (incl.
   // resize), so it turns off when the sidebar stacks at narrow widths.
   setWideSidebar(isPRPage() && sidebarIsColumn());
+  // Sticky sidebar only makes sense while it's a column; behind its own toggle.
+  setStickySidebar(settings.layout.stickySidebar && isPRPage() && sidebarIsColumn());
 
   const checks = checksPlacement(settings);
   const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';
