@@ -37,6 +37,25 @@ function setStickySidebar(on: boolean): void {
   document.documentElement.toggleAttribute(STICKY_ATTR, on);
 }
 
+/**
+ * Publish the offset the sticky sidebar should sit below: the height of
+ * GitHub's own sticky pull-request header (which floats over the page when
+ * scrolled) plus a small gap. Measured live so it tracks the header's real
+ * height; the CSS falls back to a sensible default when it can't be measured
+ * (e.g. before the header is in the DOM). Cleared when sticky is off.
+ */
+function applyStickyTop(on: boolean): void {
+  if (!on) {
+    setVar('--ghe-sticky-top', null);
+    return;
+  }
+  const header = document.querySelector<HTMLElement>(
+    '[class*="StickyPullRequestHeader-module__prHeader"]',
+  );
+  const h = header ? header.getBoundingClientRect().height : 0;
+  setVar('--ghe-sticky-top', h > 0 ? `${Math.round(h) + 8}px` : null);
+}
+
 /** Set a CSS custom property on <html> only when the value actually changed. */
 function setVar(name: string, value: string | null): void {
   const style = document.documentElement.style;
@@ -196,6 +215,7 @@ export function applyLayout(settings: Settings): void {
     // leaving the PR page — clear them or other pages' sidebars get widened.
     setWideSidebar(false);
     setStickySidebar(false);
+    applyStickyTop(false);
     return;
   }
 
@@ -205,7 +225,9 @@ export function applyLayout(settings: Settings): void {
   // resize), so it turns off when the sidebar stacks at narrow widths.
   setWideSidebar(isPRPage() && sidebarIsColumn());
   // Sticky sidebar only makes sense while it's a column; behind its own toggle.
-  setStickySidebar(settings.layout.stickySidebar && isPRPage() && sidebarIsColumn());
+  const sticky = settings.layout.stickySidebar && isPRPage() && sidebarIsColumn();
+  setStickySidebar(sticky);
+  applyStickyTop(sticky);
 
   const checks = checksPlacement(settings);
   const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';

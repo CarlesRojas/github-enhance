@@ -102,18 +102,21 @@ html[data-ghe-page-width] [class*="prc-PageLayout-PageLayoutRoot"] {
 }
 
 /* Sticky sidebar: keep the PR conversation sidebar in view as the page
-   scrolls. It sticks just below the top and, if taller than the viewport,
-   scrolls on its own. align-self stops the flex child from stretching to the
-   container's full height, which would otherwise defeat sticky. Same :has()
-   pin to the PR conversation sidebar as the wide-sidebar rule. */
+   scrolls. It sticks below GitHub's own floating pull-request header (whose
+   measured height + gap is published as --ghe-sticky-top) and, if taller than
+   the viewport, scrolls on its own. padding-right keeps that inner scrollbar
+   off the sidebar's edge. align-self stops the flex child from stretching to
+   the container's full height, which would otherwise defeat sticky. Same
+   :has() pin to the PR conversation sidebar as the wide-sidebar rule. */
 html[data-ghe-sticky-sidebar]
   [class*="prc-PageLayout-PaneWrapper"]:has(#pr-conversation-sidebar),
 html[data-ghe-sticky-sidebar] .Layout-sidebar:has(#partial-discussion-sidebar) {
   position: sticky !important;
-  top: 16px !important;
+  top: var(--ghe-sticky-top, 64px) !important;
   align-self: flex-start !important;
-  max-height: calc(100vh - 32px) !important;
+  max-height: calc(100vh - var(--ghe-sticky-top, 64px) - 16px) !important;
   overflow-y: auto !important;
+  padding-right: 8px !important;
 }
 
 /* Hide GitHub's page footer (site-wide) when the option is on. */
