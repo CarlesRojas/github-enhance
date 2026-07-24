@@ -189,6 +189,17 @@ function findMergeBox(): HTMLElement | null {
   );
 }
 
+/**
+ * True while the React mergebox is still showing its own loading spinner. It
+ * re-renders — sometimes remounting the node entirely — once merge data
+ * arrives, so grabbing and moving it mid-load can strand the detached spinner
+ * in the sidebar (React then mounts a fresh mergebox at the origin, and our
+ * SIG guard never reconciles it away). Wait for it to settle first.
+ */
+function mergeBoxLoading(box: HTMLElement): boolean {
+  return !!box.querySelector('[class*="MergeBox-module__mergeboxLoading"]');
+}
+
 /** The "Add a comment" composer only — NOT other people's / CI comments. */
 function findComposeBox(): HTMLElement | null {
   const field = document.querySelector<HTMLElement>(
@@ -291,6 +302,9 @@ export function applyLayout(settings: Settings): void {
 
   // Wait until everything we need is present (page still loading) — retry.
   if (checks !== 'off' && !safe(mergeBox)) return;
+  // ...and until the mergebox has settled out of its loading state, so we
+  // don't move a spinner node that React is about to remount.
+  if (safe(mergeBox) && mergeBoxLoading(mergeBox)) return;
   if (checks === 'sidebar' && !sidebar) return;
   if (compose !== 'off' && !safe(composeBox)) return;
 
