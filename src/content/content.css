@@ -404,7 +404,7 @@ html[data-ghe-redesign] .ghe-draft-btn,
 html[data-ghe-redesign] .ghe-close-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   font: inherit;
   font-size: 12px;
   font-weight: 500;
