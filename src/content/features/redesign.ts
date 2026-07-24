@@ -27,6 +27,8 @@ const CLOSE_HIDDEN = 'data-ghe-close-hidden';
 const SLOT_CLASS = 'ghe-draft-slot';
 const DRAFT_BTN_CLASS = 'ghe-draft-btn';
 const CLOSE_BTN_CLASS = 'ghe-close-btn';
+const DESTRUCTIVE_CLASS = 'ghe-destructive'; // red danger styling for Close
+const LOADING_CLASS = 'ghe-loading'; // spinner while the action is in flight
 
 /** The checks card that hosts the relocated action buttons. */
 function findChecksBox(): HTMLElement | null {
@@ -145,10 +147,38 @@ function ensureDraftBtn(slot: HTMLElement): void {
   btn.textContent = 'Convert to draft';
   btn.addEventListener('click', (e) => {
     e.preventDefault();
+    if (btn.classList.contains(LOADING_CLASS)) return;
+    setLoading(btn); // cleared when the control goes away (converted) or reload
     // Resolve at click time — React may have re-rendered the original.
     findDraftButton()?.click();
   });
   slot.appendChild(btn);
+}
+
+// --- Loading state ---------------------------------------------------------
+// On click, a proxy shows a spinner (the label is hidden, interaction blocked)
+// until the action lands: a close/reopen flips the button's label, a draft
+// conversion removes the control, and either way a reload wipes it. A single
+// failsafe timer clears a stuck spinner if none of that happens.
+
+let loadTimer = 0;
+
+function setLoading(btn: HTMLElement): void {
+  if (btn.classList.contains(LOADING_CLASS)) return;
+  btn.classList.add(LOADING_CLASS);
+  btn.setAttribute('aria-busy', 'true');
+  clearTimeout(loadTimer);
+  loadTimer = window.setTimeout(clearAllLoading, 12000);
+}
+
+function clearLoading(btn: HTMLElement): void {
+  btn.classList.remove(LOADING_CLASS);
+  btn.removeAttribute('aria-busy');
+  delete btn.dataset.gheLoadingLabel;
+}
+
+function clearAllLoading(): void {
+  document.querySelectorAll<HTMLElement>('.' + LOADING_CLASS).forEach(clearLoading);
 }
 
 // --- Close / Reopen --------------------------------------------------------
@@ -202,7 +232,11 @@ function ensureCloseBtn(slot: HTMLElement, original: HTMLElement): void {
     btn.className = CLOSE_BTN_CLASS;
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      if ((e.currentTarget as HTMLElement).getAttribute('aria-disabled') === 'true') return;
+      const b = e.currentTarget as HTMLElement;
+      if (b.getAttribute('aria-disabled') === 'true' || b.classList.contains(LOADING_CLASS)) return;
+      // Remember the label so we can clear the spinner once the state flips.
+      b.dataset.gheLoadingLabel = b.textContent ?? '';
+      setLoading(b);
       // Resolve at click time — the socket-updated bar swaps the original.
       findCloseButton()?.click();
     });
@@ -214,7 +248,21 @@ function ensureCloseBtn(slot: HTMLElement, original: HTMLElement): void {
   if (slot.firstElementChild !== btn) slot.prepend(btn); // keep it left of draft
 
   const label = closeLabel(original);
+  // The action landed once the label flips (Close ⇄ Reopen) — drop the spinner.
+  if (
+    btn.classList.contains(LOADING_CLASS) &&
+    btn.dataset.gheLoadingLabel !== undefined &&
+    btn.dataset.gheLoadingLabel !== label
+  ) {
+    clearLoading(btn);
+  }
   if (btn.textContent !== label) btn.textContent = label;
+
+  // Only the Close action is destructive; Reopen keeps the neutral styling.
+  const destructive = original.getAttribute('name') === 'comment_and_close';
+  if (btn.classList.contains(DESTRUCTIVE_CLASS) !== destructive) {
+    btn.classList.toggle(DESTRUCTIVE_CLASS, destructive);
+  }
 
   const reason = original.hasAttribute('disabled') ? original.getAttribute('aria-label') : null;
   if (reason) {

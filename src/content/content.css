@@ -455,6 +455,67 @@ html[data-ghe-redesign] .ghe-close-btn[aria-disabled="true"] {
   );
 }
 
+/* Close (destructive) proxy: GitHub's danger-button treatment — red label at
+   rest, red fill on hover. Reopen drops this class and keeps the neutral look.
+   Higher specificity than the default hover/active rules, so it wins. */
+html[data-ghe-redesign] .ghe-close-btn.ghe-destructive {
+  color: var(
+    --button-danger-fgColor-rest,
+    var(--fgColor-danger, var(--color-btn-danger-text, #cf222e))
+  );
+}
+html[data-ghe-redesign] .ghe-close-btn.ghe-destructive:hover:not([aria-disabled="true"]) {
+  color: var(--button-danger-fgColor-hover, var(--fgColor-onEmphasis, #ffffff));
+  background: var(
+    --button-danger-bgColor-hover,
+    var(--bgColor-danger-emphasis, var(--color-btn-danger-hover-bg, #a40e26))
+  );
+  border-color: var(
+    --button-danger-borderColor-hover,
+    var(--bgColor-danger-emphasis, var(--color-btn-danger-hover-bg, #a40e26))
+  );
+}
+html[data-ghe-redesign] .ghe-close-btn.ghe-destructive:active:not([aria-disabled="true"]) {
+  color: var(--button-danger-fgColor-active, var(--fgColor-onEmphasis, #ffffff));
+  background: var(
+    --button-danger-bgColor-active,
+    var(--color-btn-danger-selected-bg, #86061d)
+  );
+  border-color: var(
+    --button-danger-borderColor-active,
+    var(--color-btn-danger-selected-bg, #86061d)
+  );
+}
+
+/* Loading proxy: hide the label, show a centered spinner, block interaction.
+   The content script clears it once the action lands, on reload, or via a
+   failsafe timer. */
+html[data-ghe-redesign] .ghe-draft-btn.ghe-loading,
+html[data-ghe-redesign] .ghe-close-btn.ghe-loading {
+  color: transparent !important;
+  pointer-events: none;
+  position: relative;
+}
+html[data-ghe-redesign] .ghe-draft-btn.ghe-loading::after,
+html[data-ghe-redesign] .ghe-close-btn.ghe-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border: 2px solid var(--fgColor-muted, var(--color-fg-muted, #656d76));
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ghe-spin 0.6s linear infinite;
+}
+@keyframes ghe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Page-level tooltip for a disabled proxy's reason. Fixed to the viewport and
    appended to <body>, so it escapes the checks card / sidebar overflow that
    clipped GitHub's own .tooltipped bubble; JS keeps it >=16px from every edge.
