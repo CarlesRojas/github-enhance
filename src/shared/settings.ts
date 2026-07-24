@@ -98,6 +98,9 @@ export interface Settings {
     // Move the checks / merge box up: above the timeline on mobile, into the
     // sidebar on desktop (when the sidebar is shown as a column).
     checksTop: boolean;
+    // Relocate the "Close / Reopen pull request" button into the checks box,
+    // beside the "Convert to draft" proxy (needs the redesign on).
+    closeInChecks: boolean;
     composeTop: boolean; // move the "Add a comment" box above the timeline
     hideNotices: boolean; // hide the Community Guidelines + ProTip notes
     hideFooter: boolean; // hide GitHub's page footer
@@ -124,6 +127,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dates: { enabled: true, dateFormat: 'iso', timeFormat: '24', hideCurrentYear: true },
   layout: {
     checksTop: true,
+    closeInChecks: true,
     composeTop: false,
     hideNotices: true,
     hideFooter: true,

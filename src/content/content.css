@@ -395,11 +395,13 @@ html[data-ghe-redesign]
 html[data-ghe-redesign] .ghe-draft-slot {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   padding: 8px 12px 12px;
 }
-/* Styled with GitHub's default-button tokens so it matches its neighbours
-   in every native theme. */
-html[data-ghe-redesign] .ghe-draft-btn {
+/* Styled with GitHub's default-button tokens so they match their neighbours
+   in every native theme. The Close/Reopen proxy shares the same look. */
+html[data-ghe-redesign] .ghe-draft-btn,
+html[data-ghe-redesign] .ghe-close-btn {
   font: inherit;
   font-size: 12px;
   font-weight: 500;
@@ -420,14 +422,16 @@ html[data-ghe-redesign] .ghe-draft-btn {
   );
   cursor: pointer;
 }
-html[data-ghe-redesign] .ghe-draft-btn:hover {
+html[data-ghe-redesign] .ghe-draft-btn:hover,
+html[data-ghe-redesign] .ghe-close-btn:hover {
   background: var(--button-default-bgColor-hover, var(--color-btn-hover-bg, #eff2f5));
   border-color: var(
     --button-default-borderColor-hover,
     var(--borderColor-default, #d0d7de)
   );
 }
-html[data-ghe-redesign] .ghe-draft-btn:active {
+html[data-ghe-redesign] .ghe-draft-btn:active,
+html[data-ghe-redesign] .ghe-close-btn:active {
   background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #e7ebef));
 }
 
