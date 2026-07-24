@@ -422,17 +422,36 @@ html[data-ghe-redesign] .ghe-close-btn {
   );
   cursor: pointer;
 }
-html[data-ghe-redesign] .ghe-draft-btn:hover,
-html[data-ghe-redesign] .ghe-close-btn:hover {
+html[data-ghe-redesign] .ghe-draft-btn:hover:not(:disabled),
+html[data-ghe-redesign] .ghe-close-btn:hover:not(:disabled) {
   background: var(--button-default-bgColor-hover, var(--color-btn-hover-bg, #eff2f5));
   border-color: var(
     --button-default-borderColor-hover,
     var(--borderColor-default, #d0d7de)
   );
 }
-html[data-ghe-redesign] .ghe-draft-btn:active,
-html[data-ghe-redesign] .ghe-close-btn:active {
+html[data-ghe-redesign] .ghe-draft-btn:active:not(:disabled),
+html[data-ghe-redesign] .ghe-close-btn:active:not(:disabled) {
   background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #e7ebef));
+}
+/* Disabled proxy: dimmed with GitHub's disabled tokens, matching a disabled
+   native button (e.g. Reopen when the branch is gone). The .tooltipped hover
+   popup still shows the reason. */
+html[data-ghe-redesign] .ghe-draft-btn:disabled,
+html[data-ghe-redesign] .ghe-close-btn:disabled {
+  cursor: default;
+  color: var(
+    --button-default-fgColor-disabled,
+    var(--fgColor-disabled, var(--color-primer-fg-disabled, #8c959f))
+  );
+  background: var(
+    --button-default-bgColor-disabled,
+    var(--control-bgColor-disabled, var(--color-btn-bg, #f6f8fa))
+  );
+  border-color: var(
+    --button-default-borderColor-disabled,
+    var(--borderColor-disabled, var(--color-border-default, #d0d7de))
+  );
 }
 
 /* Its internal separators pick up the same border color. The outer card

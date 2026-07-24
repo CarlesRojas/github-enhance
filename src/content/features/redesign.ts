@@ -181,8 +181,14 @@ function closeLabel(btn: HTMLElement): string {
   );
 }
 
-/** Add / keep the close proxy as the slot's left-most button, with `label`. */
-function ensureCloseBtn(slot: HTMLElement, label: string): void {
+/**
+ * Add / keep the close proxy as the slot's left-most button, mirroring the
+ * original's label, disabled state, and — when disabled — the reason GitHub
+ * shows on hover (e.g. "The … branch has been deleted."). GitHub's own
+ * .tooltipped CSS renders that bubble from aria-label, so reusing those
+ * classes gives our button the same popup for free.
+ */
+function ensureCloseBtn(slot: HTMLElement, original: HTMLElement): void {
   let btn = slot.querySelector<HTMLButtonElement>(':scope > .' + CLOSE_BTN_CLASS);
   if (!btn) {
     btn = document.createElement('button');
@@ -195,7 +201,21 @@ function ensureCloseBtn(slot: HTMLElement, label: string): void {
     });
   }
   if (slot.firstElementChild !== btn) slot.prepend(btn); // keep it left of draft
+
+  const label = closeLabel(original);
   if (btn.textContent !== label) btn.textContent = label;
+
+  const disabled = original.hasAttribute('disabled');
+  if (btn.disabled !== disabled) btn.disabled = disabled;
+
+  const reason = disabled ? original.getAttribute('aria-label') : null;
+  if (reason) {
+    if (btn.getAttribute('aria-label') !== reason) btn.setAttribute('aria-label', reason);
+    btn.classList.add('tooltipped', 'tooltipped-n');
+  } else {
+    if (btn.hasAttribute('aria-label')) btn.removeAttribute('aria-label');
+    btn.classList.remove('tooltipped', 'tooltipped-n');
+  }
 }
 
 // --- Apply -----------------------------------------------------------------
@@ -231,7 +251,7 @@ function applyProxies(on: boolean, closeOn: boolean): void {
     // Hide just the button's own .color-bg-subtle box, leaving the adjacent
     // Comment button in place.
     hideOnly(closeOriginal.closest<HTMLElement>('.color-bg-subtle') ?? closeOriginal, CLOSE_HIDDEN);
-    ensureCloseBtn(slot, closeLabel(closeOriginal));
+    ensureCloseBtn(slot, closeOriginal);
   } else {
     clearAllHidden(CLOSE_HIDDEN);
     slot.querySelector(':scope > .' + CLOSE_BTN_CLASS)?.remove();
