@@ -135,3 +135,6 @@ src/
   they no-op rather than break the page.
 - Only two permissions are requested: `storage` and host access to
   `https://github.com/*`.
+
+<!-- Test PR: demo page for the Close/Reopen-in-checks button. Safe to close. -->
+
