@@ -585,6 +585,30 @@ html[data-ghe-redesign]
   border-bottom-right-radius: calc(var(--ghe-radius) - 1px) !important;
 }
 
+/* Outdated (still unresolved) inline review threads collapsed in the
+   timeline. GitHub's newer <review-thread-collapsible> is the bordered box;
+   give it the same card treatment as resolved threads. Its header is a
+   bgColor-muted bar (filename + "Outdated" label) rather than the
+   .js-toggle-outdated-comments toggle the resolved variant uses. */
+html[data-ghe-redesign] review-thread-collapsible {
+  background-color: var(--ghe-card-bg) !important;
+  border: 1px solid var(--ghe-card-border) !important;
+  border-radius: var(--ghe-radius) !important;
+  border-top-left-radius: calc(var(--ghe-radius) / 4) !important;
+}
+/* Its shaded header blends into the card (our bg) and rounds to match. */
+html[data-ghe-redesign] review-thread-collapsible > .bgColor-muted {
+  background-color: transparent !important;
+  border-top-left-radius: calc(var(--ghe-radius) / 4 - 1px) !important;
+  border-top-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+/* Collapsed, that header is also the card's bottom edge, so round it there too
+   (the container only gains .open while expanded). */
+html[data-ghe-redesign] review-thread-collapsible:not(.open) > .bgColor-muted {
+  border-bottom-left-radius: calc(var(--ghe-radius) - 1px) !important;
+  border-bottom-right-radius: calc(var(--ghe-radius) - 1px) !important;
+}
+
 /* The timeline's "N hidden items / Load more…" pagination: the <form>
    itself paints the page background, while the Box holding the buttons is
    a card like any other. The buttons' own color-bg-default goes transparent
