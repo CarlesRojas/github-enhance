@@ -422,23 +422,24 @@ html[data-ghe-redesign] .ghe-close-btn {
   );
   cursor: pointer;
 }
-html[data-ghe-redesign] .ghe-draft-btn:hover:not(:disabled),
-html[data-ghe-redesign] .ghe-close-btn:hover:not(:disabled) {
+html[data-ghe-redesign] .ghe-draft-btn:hover:not([aria-disabled="true"]),
+html[data-ghe-redesign] .ghe-close-btn:hover:not([aria-disabled="true"]) {
   background: var(--button-default-bgColor-hover, var(--color-btn-hover-bg, #eff2f5));
   border-color: var(
     --button-default-borderColor-hover,
     var(--borderColor-default, #d0d7de)
   );
 }
-html[data-ghe-redesign] .ghe-draft-btn:active:not(:disabled),
-html[data-ghe-redesign] .ghe-close-btn:active:not(:disabled) {
+html[data-ghe-redesign] .ghe-draft-btn:active:not([aria-disabled="true"]),
+html[data-ghe-redesign] .ghe-close-btn:active:not([aria-disabled="true"]) {
   background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #e7ebef));
 }
 /* Disabled proxy: dimmed with GitHub's disabled tokens, matching a disabled
-   native button (e.g. Reopen when the branch is gone). The .tooltipped hover
-   popup still shows the reason. */
-html[data-ghe-redesign] .ghe-draft-btn:disabled,
-html[data-ghe-redesign] .ghe-close-btn:disabled {
+   native button (e.g. Reopen when the branch is gone). It's aria-disabled (not
+   truly disabled) so it stays hoverable for the page-level tooltip (.ghe-tip)
+   that shows the reason. */
+html[data-ghe-redesign] .ghe-draft-btn[aria-disabled="true"],
+html[data-ghe-redesign] .ghe-close-btn[aria-disabled="true"] {
   cursor: default;
   color: var(
     --button-default-fgColor-disabled,
@@ -452,6 +453,29 @@ html[data-ghe-redesign] .ghe-close-btn:disabled {
     --button-default-borderColor-disabled,
     var(--borderColor-disabled, var(--color-border-default, #d0d7de))
   );
+}
+
+/* Page-level tooltip for a disabled proxy's reason. Fixed to the viewport and
+   appended to <body>, so it escapes the checks card / sidebar overflow that
+   clipped GitHub's own .tooltipped bubble; JS keeps it >=16px from every edge.
+   Colours follow GitHub's tooltip tokens. */
+.ghe-tip {
+  position: fixed;
+  z-index: 2147483647;
+  padding: 4px 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--tooltip-fgColor, var(--fgColor-onEmphasis, #ffffff));
+  background: var(--tooltip-bgColor, var(--bgColor-emphasis, #24292f));
+  border-radius: 6px;
+  overflow-wrap: break-word;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s ease-in;
+}
+.ghe-tip.is-visible {
+  opacity: 1;
 }
 
 /* Its internal separators pick up the same border color. The outer card

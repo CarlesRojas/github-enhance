@@ -45,8 +45,11 @@ function ensureSlot(box: HTMLElement): HTMLElement {
   if (!slot) {
     slot = document.createElement('div');
     slot.className = SLOT_CLASS;
-    box.appendChild(slot);
   }
+  // Keep it pinned to the bottom of the card. GitHub re-renders the mergebox
+  // after a close/reopen and can mount its new content after our slot, leaving
+  // it stranded at the top — so re-append it whenever it isn't already last.
+  if (box.lastElementChild !== slot) box.appendChild(slot);
   return slot;
 }
 
@@ -184,9 +187,12 @@ function closeLabel(btn: HTMLElement): string {
 /**
  * Add / keep the close proxy as the slot's left-most button, mirroring the
  * original's label, disabled state, and — when disabled — the reason GitHub
- * shows on hover (e.g. "The … branch has been deleted."). GitHub's own
- * .tooltipped CSS renders that bubble from aria-label, so reusing those
- * classes gives our button the same popup for free.
+ * shows on hover (e.g. "The … branch has been deleted.").
+ *
+ * The proxy is marked aria-disabled rather than truly `disabled`: a disabled
+ * button can't be hovered/focused for events, and the reason is shown through
+ * a page-level tooltip (see showTip) that needs those events. The click
+ * handler bails when aria-disabled, so it still can't act.
  */
 function ensureCloseBtn(slot: HTMLElement, original: HTMLElement): void {
   let btn = slot.querySelector<HTMLButtonElement>(':scope > .' + CLOSE_BTN_CLASS);
@@ -196,26 +202,86 @@ function ensureCloseBtn(slot: HTMLElement, original: HTMLElement): void {
     btn.className = CLOSE_BTN_CLASS;
     btn.addEventListener('click', (e) => {
       e.preventDefault();
+      if ((e.currentTarget as HTMLElement).getAttribute('aria-disabled') === 'true') return;
       // Resolve at click time — the socket-updated bar swaps the original.
       findCloseButton()?.click();
     });
+    btn.addEventListener('mouseenter', (e) => showTipFor(e.currentTarget as HTMLElement));
+    btn.addEventListener('focus', (e) => showTipFor(e.currentTarget as HTMLElement));
+    btn.addEventListener('mouseleave', hideTip);
+    btn.addEventListener('blur', hideTip);
   }
   if (slot.firstElementChild !== btn) slot.prepend(btn); // keep it left of draft
 
   const label = closeLabel(original);
   if (btn.textContent !== label) btn.textContent = label;
 
-  const disabled = original.hasAttribute('disabled');
-  if (btn.disabled !== disabled) btn.disabled = disabled;
-
-  const reason = disabled ? original.getAttribute('aria-label') : null;
+  const reason = original.hasAttribute('disabled') ? original.getAttribute('aria-label') : null;
   if (reason) {
+    if (btn.getAttribute('aria-disabled') !== 'true') btn.setAttribute('aria-disabled', 'true');
     if (btn.getAttribute('aria-label') !== reason) btn.setAttribute('aria-label', reason);
-    btn.classList.add('tooltipped', 'tooltipped-n');
-  } else {
-    if (btn.hasAttribute('aria-label')) btn.removeAttribute('aria-label');
-    btn.classList.remove('tooltipped', 'tooltipped-n');
+  } else if (btn.hasAttribute('aria-disabled')) {
+    btn.removeAttribute('aria-disabled');
+    btn.removeAttribute('aria-label');
+    hideTip();
   }
+}
+
+// --- Page-level tooltip ----------------------------------------------------
+// A disabled native button shows its reason via GitHub's .tooltipped CSS, but
+// that pseudo-element is clipped by the checks card / sidebar overflow and at
+// the viewport edge. We render our own instead: a fixed-position element on
+// <body>, clamped at least TIP_MARGIN from every screen edge.
+
+const TIP_CLASS = 'ghe-tip';
+const TIP_GAP = 8; // distance from the button
+const TIP_MARGIN = 16; // min distance from any screen edge
+let tipEl: HTMLElement | null = null;
+
+/** Show the tooltip for a proxy button, if it's aria-disabled with a reason. */
+function showTipFor(btn: HTMLElement): void {
+  if (btn.getAttribute('aria-disabled') !== 'true') return;
+  const reason = btn.getAttribute('aria-label');
+  if (reason) showTip(btn, reason);
+}
+
+function showTip(target: HTMLElement, text: string): void {
+  hideTip();
+  const vw = document.documentElement.clientWidth;
+  const vh = document.documentElement.clientHeight;
+
+  const tip = document.createElement('div');
+  tip.className = TIP_CLASS;
+  tip.textContent = text;
+  tip.style.maxWidth = `${Math.min(280, vw - 2 * TIP_MARGIN)}px`;
+  document.body.appendChild(tip);
+  tipEl = tip;
+
+  const r = target.getBoundingClientRect();
+  const tw = tip.offsetWidth;
+  const th = tip.offsetHeight;
+
+  // Prefer above the button, centered; drop below if it wouldn't clear the top.
+  let top = r.top - th - TIP_GAP;
+  if (top < TIP_MARGIN) top = r.bottom + TIP_GAP;
+  top = Math.min(Math.max(top, TIP_MARGIN), vh - th - TIP_MARGIN);
+
+  let left = r.left + r.width / 2 - tw / 2;
+  left = Math.min(Math.max(left, TIP_MARGIN), vw - tw - TIP_MARGIN);
+
+  tip.style.top = `${Math.round(top)}px`;
+  tip.style.left = `${Math.round(left)}px`;
+  requestAnimationFrame(() => tip.classList.add('is-visible'));
+
+  // A fixed tooltip would drift from the button on scroll, so dismiss it.
+  window.addEventListener('scroll', hideTip, true);
+}
+
+function hideTip(): void {
+  if (!tipEl) return;
+  tipEl.remove();
+  tipEl = null;
+  window.removeEventListener('scroll', hideTip, true);
 }
 
 // --- Apply -----------------------------------------------------------------
@@ -234,6 +300,7 @@ function applyProxies(on: boolean, closeOn: boolean): void {
     document.querySelector('.' + SLOT_CLASS)?.remove();
     clearAllHidden(DRAFT_HIDDEN);
     clearAllHidden(CLOSE_HIDDEN);
+    hideTip();
     return;
   }
 
@@ -255,6 +322,7 @@ function applyProxies(on: boolean, closeOn: boolean): void {
   } else {
     clearAllHidden(CLOSE_HIDDEN);
     slot.querySelector(':scope > .' + CLOSE_BTN_CLASS)?.remove();
+    hideTip();
   }
 }
 
