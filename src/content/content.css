@@ -402,6 +402,9 @@ html[data-ghe-redesign] .ghe-draft-slot {
    in every native theme. The Close/Reopen proxy shares the same look. */
 html[data-ghe-redesign] .ghe-draft-btn,
 html[data-ghe-redesign] .ghe-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font: inherit;
   font-size: 12px;
   font-weight: 500;
@@ -455,36 +458,18 @@ html[data-ghe-redesign] .ghe-close-btn[aria-disabled="true"] {
   );
 }
 
-/* Close (destructive) proxy: GitHub's danger-button treatment — red label at
-   rest, red fill on hover. Reopen drops this class and keeps the neutral look.
-   Higher specificity than the default hover/active rules, so it wins. */
+/* Close (destructive) proxy: only the label + icon are red (GitHub's danger
+   foreground token). Hover stays neutral — the base hover rule sets just the
+   background, so the red text/icon carry through. Reopen drops this class. The
+   icon inherits currentColor, so it turns red with the label. */
 html[data-ghe-redesign] .ghe-close-btn.ghe-destructive {
   color: var(
     --button-danger-fgColor-rest,
     var(--fgColor-danger, var(--color-btn-danger-text, #cf222e))
   );
 }
-html[data-ghe-redesign] .ghe-close-btn.ghe-destructive:hover:not([aria-disabled="true"]) {
-  color: var(--button-danger-fgColor-hover, var(--fgColor-onEmphasis, #ffffff));
-  background: var(
-    --button-danger-bgColor-hover,
-    var(--bgColor-danger-emphasis, var(--color-btn-danger-hover-bg, #a40e26))
-  );
-  border-color: var(
-    --button-danger-borderColor-hover,
-    var(--bgColor-danger-emphasis, var(--color-btn-danger-hover-bg, #a40e26))
-  );
-}
-html[data-ghe-redesign] .ghe-close-btn.ghe-destructive:active:not([aria-disabled="true"]) {
-  color: var(--button-danger-fgColor-active, var(--fgColor-onEmphasis, #ffffff));
-  background: var(
-    --button-danger-bgColor-active,
-    var(--color-btn-danger-selected-bg, #86061d)
-  );
-  border-color: var(
-    --button-danger-borderColor-active,
-    var(--color-btn-danger-selected-bg, #86061d)
-  );
+html[data-ghe-redesign] .ghe-close-icon {
+  flex-shrink: 0;
 }
 
 /* Loading proxy: hide the label, show a centered spinner, block interaction.
@@ -502,9 +487,10 @@ html[data-ghe-redesign] .ghe-close-btn.ghe-loading::after {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 12px;
-  height: 12px;
-  margin: -6px 0 0 -6px;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
   border: 2px solid var(--fgColor-muted, var(--color-fg-muted, #656d76));
   border-top-color: transparent;
   border-radius: 50%;

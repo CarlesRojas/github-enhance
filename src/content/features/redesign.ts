@@ -29,6 +29,27 @@ const DRAFT_BTN_CLASS = 'ghe-draft-btn';
 const CLOSE_BTN_CLASS = 'ghe-close-btn';
 const DESTRUCTIVE_CLASS = 'ghe-destructive'; // red danger styling for Close
 const LOADING_CLASS = 'ghe-loading'; // spinner while the action is in flight
+const LABEL_CLASS = 'ghe-btn-label'; // wraps the proxy's text (icon sits beside)
+const CLOSE_ICON_CLASS = 'ghe-close-icon'; // the closed-PR octicon on Close
+
+/** GitHub's git-pull-request-closed octicon, shown on the Close proxy. */
+function buildCloseIcon(): SVGElement {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('class', CLOSE_ICON_CLASS);
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('width', '16');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('fill', 'currentColor');
+  const path = document.createElementNS(NS, 'path');
+  path.setAttribute(
+    'd',
+    'M3.25 1A2.25 2.25 0 0 1 4 5.372v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.251 2.251 0 0 1 3.25 1Zm9.5 5.5a.75.75 0 0 1 .75.75v3.378a2.251 2.251 0 1 1-1.5 0V7.25a.75.75 0 0 1 .75-.75Zm-2.03-5.273a.75.75 0 0 1 1.06 0l.97.97.97-.97a.748.748 0 0 1 1.265.332.75.75 0 0 1-.205.729l-.97.97.97.97a.751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018l-.97-.97-.97.97a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734l.97-.97-.97-.97a.75.75 0 0 1 0-1.06ZM2.5 3.25a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0ZM3.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm9.5 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z',
+  );
+  svg.appendChild(path);
+  return svg;
+}
 
 /** The checks card that hosts the relocated action buttons. */
 function findChecksBox(): HTMLElement | null {
@@ -148,6 +169,7 @@ function ensureDraftBtn(slot: HTMLElement): void {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     if (btn.classList.contains(LOADING_CLASS)) return;
+    draftPending = true; // survive the mergebox re-render mid-conversion
     setLoading(btn); // cleared when the control goes away (converted) or reload
     // Resolve at click time — React may have re-rendered the original.
     findDraftButton()?.click();
@@ -162,6 +184,10 @@ function ensureDraftBtn(slot: HTMLElement): void {
 // failsafe timer clears a stuck spinner if none of that happens.
 
 let loadTimer = 0;
+// The draft toggle re-renders the mergebox, which can recreate our button
+// mid-action and drop the spinner. This intent flag re-asserts it until the
+// control goes away (converted) or the failsafe fires.
+let draftPending = false;
 
 function setLoading(btn: HTMLElement): void {
   if (btn.classList.contains(LOADING_CLASS)) return;
@@ -178,6 +204,7 @@ function clearLoading(btn: HTMLElement): void {
 }
 
 function clearAllLoading(): void {
+  draftPending = false;
   document.querySelectorAll<HTMLElement>('.' + LOADING_CLASS).forEach(clearLoading);
 }
 
@@ -256,12 +283,29 @@ function ensureCloseBtn(slot: HTMLElement, original: HTMLElement): void {
   ) {
     clearLoading(btn);
   }
-  if (btn.textContent !== label) btn.textContent = label;
 
-  // Only the Close action is destructive; Reopen keeps the neutral styling.
+  // Content is a label span plus an optional leading icon, so the spinner and
+  // the label can coexist without setting textContent (which would drop the
+  // icon).
+  let labelEl = btn.querySelector<HTMLElement>(':scope > .' + LABEL_CLASS);
+  if (!labelEl) {
+    labelEl = document.createElement('span');
+    labelEl.className = LABEL_CLASS;
+    btn.appendChild(labelEl);
+  }
+  if (labelEl.textContent !== label) labelEl.textContent = label;
+
+  // Only Close is destructive, and only Close carries the closed-PR icon;
+  // Reopen keeps the neutral styling and no icon (matching GitHub).
   const destructive = original.getAttribute('name') === 'comment_and_close';
   if (btn.classList.contains(DESTRUCTIVE_CLASS) !== destructive) {
     btn.classList.toggle(DESTRUCTIVE_CLASS, destructive);
+  }
+  const icon = btn.querySelector(':scope > .' + CLOSE_ICON_CLASS);
+  if (destructive && !icon) {
+    btn.insertBefore(buildCloseIcon(), btn.firstChild);
+  } else if (!destructive && icon) {
+    icon.remove();
   }
 
   const reason = original.hasAttribute('disabled') ? original.getAttribute('aria-label') : null;
@@ -357,7 +401,12 @@ function applyProxies(on: boolean, closeOn: boolean): void {
   if (showDraft && draftOriginal) {
     hideOnly(draftWrapper(draftOriginal), DRAFT_HIDDEN);
     ensureDraftBtn(slot);
+    if (draftPending) {
+      const db = slot.querySelector<HTMLElement>(':scope > .' + DRAFT_BTN_CLASS);
+      if (db) setLoading(db); // re-assert if GitHub recreated the button
+    }
   } else {
+    draftPending = false; // the control is gone → the conversion landed
     clearAllHidden(DRAFT_HIDDEN);
     slot.querySelector(':scope > .' + DRAFT_BTN_CLASS)?.remove();
   }
