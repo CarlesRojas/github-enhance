@@ -395,11 +395,16 @@ html[data-ghe-redesign]
 html[data-ghe-redesign] .ghe-draft-slot {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   padding: 8px 12px 12px;
 }
-/* Styled with GitHub's default-button tokens so it matches its neighbours
-   in every native theme. */
-html[data-ghe-redesign] .ghe-draft-btn {
+/* Styled with GitHub's default-button tokens so they match their neighbours
+   in every native theme. The Close/Reopen proxy shares the same look. */
+html[data-ghe-redesign] .ghe-draft-btn,
+html[data-ghe-redesign] .ghe-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font: inherit;
   font-size: 12px;
   font-weight: 500;
@@ -420,15 +425,104 @@ html[data-ghe-redesign] .ghe-draft-btn {
   );
   cursor: pointer;
 }
-html[data-ghe-redesign] .ghe-draft-btn:hover {
+html[data-ghe-redesign] .ghe-draft-btn:hover:not([aria-disabled="true"]),
+html[data-ghe-redesign] .ghe-close-btn:hover:not([aria-disabled="true"]) {
   background: var(--button-default-bgColor-hover, var(--color-btn-hover-bg, #eff2f5));
   border-color: var(
     --button-default-borderColor-hover,
     var(--borderColor-default, #d0d7de)
   );
 }
-html[data-ghe-redesign] .ghe-draft-btn:active {
+html[data-ghe-redesign] .ghe-draft-btn:active:not([aria-disabled="true"]),
+html[data-ghe-redesign] .ghe-close-btn:active:not([aria-disabled="true"]) {
   background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #e7ebef));
+}
+/* Disabled proxy: dimmed with GitHub's disabled tokens, matching a disabled
+   native button (e.g. Reopen when the branch is gone). It's aria-disabled (not
+   truly disabled) so it stays hoverable for the page-level tooltip (.ghe-tip)
+   that shows the reason. */
+html[data-ghe-redesign] .ghe-draft-btn[aria-disabled="true"],
+html[data-ghe-redesign] .ghe-close-btn[aria-disabled="true"] {
+  cursor: default;
+  color: var(
+    --button-default-fgColor-disabled,
+    var(--fgColor-disabled, var(--color-primer-fg-disabled, #8c959f))
+  );
+  background: var(
+    --button-default-bgColor-disabled,
+    var(--control-bgColor-disabled, var(--color-btn-bg, #f6f8fa))
+  );
+  border-color: var(
+    --button-default-borderColor-disabled,
+    var(--borderColor-disabled, var(--color-border-default, #d0d7de))
+  );
+}
+
+/* Close (destructive) proxy: only the label + icon are red (GitHub's danger
+   foreground token). Hover stays neutral — the base hover rule sets just the
+   background, so the red text/icon carry through. Reopen drops this class. The
+   icon inherits currentColor, so it turns red with the label. */
+html[data-ghe-redesign] .ghe-close-btn.ghe-destructive {
+  color: var(
+    --button-danger-fgColor-rest,
+    var(--fgColor-danger, var(--color-btn-danger-text, #cf222e))
+  );
+}
+html[data-ghe-redesign] .ghe-close-icon {
+  flex-shrink: 0;
+}
+
+/* Loading proxy: hide the label, show a centered spinner, block interaction.
+   The content script clears it once the action lands, on reload, or via a
+   failsafe timer. */
+html[data-ghe-redesign] .ghe-draft-btn.ghe-loading,
+html[data-ghe-redesign] .ghe-close-btn.ghe-loading {
+  color: transparent !important;
+  pointer-events: none;
+  position: relative;
+}
+html[data-ghe-redesign] .ghe-draft-btn.ghe-loading::after,
+html[data-ghe-redesign] .ghe-close-btn.ghe-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border: 2px solid var(--fgColor-muted, var(--color-fg-muted, #656d76));
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ghe-spin 0.6s linear infinite;
+}
+@keyframes ghe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Page-level tooltip for a disabled proxy's reason. Fixed to the viewport and
+   appended to <body>, so it escapes the checks card / sidebar overflow that
+   clipped GitHub's own .tooltipped bubble; JS keeps it >=16px from every edge.
+   Colours follow GitHub's tooltip tokens. */
+.ghe-tip {
+  position: fixed;
+  z-index: 2147483647;
+  padding: 4px 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--tooltip-fgColor, var(--fgColor-onEmphasis, #ffffff));
+  background: var(--tooltip-bgColor, var(--bgColor-emphasis, #24292f));
+  border-radius: 6px;
+  overflow-wrap: break-word;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s ease-in;
+}
+.ghe-tip.is-visible {
+  opacity: 1;
 }
 
 /* Its internal separators pick up the same border color. The outer card

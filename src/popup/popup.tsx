@@ -182,6 +182,22 @@ function LayoutGroup({ settings, update }: GroupProps) {
         }
       />
       <Row
+        label={
+          <>
+            Close button in checks
+            <span className="tag">Experimental</span>
+          </>
+        }
+        description="Move the Close/Reopen PR button into the checks box, beside Convert to draft. Needs the redesign on."
+        control={
+          <Toggle
+            checked={l.closeInChecks}
+            label="Close button in checks"
+            onChange={(v) => update((s) => (s.layout.closeInChecks = v))}
+          />
+        }
+      />
+      <Row
         label="Sidebar width"
         description="Width of the PR sidebar on wide screens, as % of the content."
         control={
