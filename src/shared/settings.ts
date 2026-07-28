@@ -121,6 +121,13 @@ export interface Settings {
     /** Visual overhaul of the pull-request page (all-or-nothing toggle). */
     redesign: boolean;
   };
+  nav: {
+    /**
+     * Rename the repository's "Pull requests" tab to "My Pull Requests" and
+     * point it at the same page filtered to your own open pull requests.
+     */
+    myPullRequests: boolean;
+  };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -140,6 +147,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   hideComments: { enabled: true },
   appearance: { redesign: true },
+  nav: { myPullRequests: true },
 };
 
 const STORAGE_KEY = 'settings';
@@ -155,6 +163,7 @@ export function mergeSettings(partial: unknown): Settings {
     },
     hideComments: { ...DEFAULT_SETTINGS.hideComments, ...(p.hideComments ?? {}) },
     appearance: { ...DEFAULT_SETTINGS.appearance, ...(p.appearance ?? {}) },
+    nav: { ...DEFAULT_SETTINGS.nav, ...(p.nav ?? {}) },
   };
 }
 

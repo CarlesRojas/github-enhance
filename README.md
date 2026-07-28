@@ -61,7 +61,22 @@ Hide sidebar sections you don’t use on PR/issue pages.
   reload.
 - *Lock conversation* hides just that control, not a neighbouring Pin button.
 
-### 4. Comments — Hide as outdated
+### 4. Repository Tabs — My Pull Requests
+
+Renames a repository's **Pull requests** tab to **My Pull Requests** and points
+it at the same page filtered to your own open PRs
+(`/owner/repo/pulls?q=is:pr+is:open+author:@me`).
+
+- The filter uses GitHub's `@me` self-reference, so nothing has to look up (or
+  store) your username, and no extra permission is needed.
+- The tab keeps its icon, position and Turbo behaviour; the repo-wide open-PR
+  counter is hidden, since it no longer describes what the tab opens.
+- The tab bar is React-rendered, so every pass re-asserts the change (and
+  re-applies it if React resets the link). The original link and label are
+  stashed on the anchor, so turning the option off restores them without a
+  reload.
+
+### 5. Comments — Hide as outdated
 
 Adds a **Hide** button to the right of every pull-request comment that
 minimizes it as *Outdated* in one click — the same result as
@@ -118,7 +133,8 @@ src/
       dates.ts           # feature 1
       sidebar.ts         # feature 2
       hideComments.ts    # feature 3
-      timeline.ts        # feature 4
+      nav.ts             # feature 4 (repository tab bar)
+      timeline.ts        # feature 5
   popup/
     popup.html
     popup.tsx            # React app

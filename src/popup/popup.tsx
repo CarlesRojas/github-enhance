@@ -82,6 +82,27 @@ function AppearanceGroup({ settings, update }: GroupProps) {
   );
 }
 
+function NavigationGroup({ settings, update }: GroupProps) {
+  return (
+    <Group
+      title="Repository Tabs"
+      description="Tweak the tab bar shown at the top of every repository."
+    >
+      <Row
+        label="My Pull Requests tab"
+        description="Rename “Pull requests” to “My Pull Requests” and open it filtered to your own open PRs. Hides the tab's repo-wide count."
+        control={
+          <Toggle
+            checked={settings.nav.myPullRequests}
+            label="My Pull Requests tab"
+            onChange={(v) => update((s) => (s.nav.myPullRequests = v))}
+          />
+        }
+      />
+    </Group>
+  );
+}
+
 function DatesGroup({ settings, update }: GroupProps) {
   const d = settings.dates;
   const now = new Date();
@@ -346,6 +367,7 @@ function App() {
       {settings && (
         <>
           <AppearanceGroup settings={settings} update={update} />
+          <NavigationGroup settings={settings} update={update} />
           <DatesGroup settings={settings} update={update} />
           <LayoutGroup settings={settings} update={update} />
           <SidebarGroup settings={settings} update={update} />

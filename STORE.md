@@ -37,6 +37,10 @@ Hide any sidebar section you don't use, each with its own toggle: Reviewers,
 Assignees, Labels, Projects, Milestone, Development, Notifications,
 Participants, and Lock conversation.
 
+🔎 My Pull Requests tab
+Turn a repository's “Pull requests” tab into “My Pull Requests”, opening the
+same page filtered to your own open pull requests.
+
 🙈 One-click hide
 A Hide button collapses a comment as “outdated” in one click; an Unhide button
 brings it back.
