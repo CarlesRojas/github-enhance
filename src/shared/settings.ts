@@ -127,6 +127,11 @@ export interface Settings {
      * point it at the same page filtered to your own open pull requests.
      */
     myPullRequests: boolean;
+    /**
+     * Drop the orange underline under the selected repository tab and color
+     * its label and icon accent blue instead.
+     */
+    accentSelectedTab: boolean;
   };
 }
 
@@ -147,7 +152,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   hideComments: { enabled: true },
   appearance: { redesign: true },
-  nav: { myPullRequests: true },
+  nav: { myPullRequests: true, accentSelectedTab: true },
 };
 
 const STORAGE_KEY = 'settings';
