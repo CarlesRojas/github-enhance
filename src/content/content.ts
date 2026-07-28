@@ -8,6 +8,7 @@ import { applyDates } from './features/dates';
 import { applySidebar } from './features/sidebar';
 import { applyHideButtons } from './features/hideComments';
 import { applyLayout } from './features/layout';
+import { applyNav } from './features/nav';
 import { applyNotices } from './features/notices';
 import { applyRedesign } from './features/redesign';
 
@@ -32,6 +33,7 @@ function applyAll(settings: Settings): void {
     run('sidebar', () => applySidebar(settings));
     run('hideComments', () => applyHideButtons(settings));
     run('layout', () => applyLayout(settings));
+    run('nav', () => applyNav(settings));
     run('notices', () => applyNotices(settings));
     run('redesign', () => applyRedesign(settings));
   } finally {
