@@ -128,6 +128,52 @@ html[data-ghe-hide-footer] .Footer {
   display: none !important;
 }
 
+/* Selected repository tab in accent blue instead of the orange underline.
+   Site-wide (the tab bar is on every repository page), keyed off an attribute
+   on <html> set by nav.ts.
+
+   Primer marks the selected item with aria-current (the repo tab bar) or
+   aria-selected (tab-role variants) and draws the orange rule as an ::after
+   pseudo-element on the item; ::before is the bold-label width placeholder,
+   so only ::after is dropped. Both the hashed React class
+   (prc-components-UnderlineItem-*, matched by prefix) and the classic
+   .UnderlineNav-item markup are covered. */
+html[data-ghe-tab-accent] [class*="prc-components-UnderlineItem"][aria-current]:not([aria-current="false"])::after,
+html[data-ghe-tab-accent] [class*="prc-components-UnderlineItem"][aria-selected="true"]::after,
+html[data-ghe-tab-accent] .UnderlineNav-item[aria-current]:not([aria-current="false"])::after,
+html[data-ghe-tab-accent] .UnderlineNav-item[aria-selected="true"]::after {
+  display: none !important;
+}
+
+/* The label turns accent blue. The classic markup underlines the selected
+   item with a border instead of a pseudo-element, so that goes too. */
+html[data-ghe-tab-accent] [class*="prc-components-UnderlineItem"][aria-current]:not([aria-current="false"]),
+html[data-ghe-tab-accent] [class*="prc-components-UnderlineItem"][aria-selected="true"],
+html[data-ghe-tab-accent] .UnderlineNav-item[aria-current]:not([aria-current="false"]),
+html[data-ghe-tab-accent] .UnderlineNav-item[aria-selected="true"] {
+  color: var(--fgColor-accent, var(--color-accent-fg, #0969da)) !important;
+  border-bottom-color: transparent !important;
+}
+
+/* Primer gives the icon its own muted color, so it has to be handed back to
+   the link's color explicitly — the <svg> already paints with currentColor. */
+html[data-ghe-tab-accent] [class*="prc-components-UnderlineItem"][aria-current]:not([aria-current="false"]) [data-component="icon"],
+html[data-ghe-tab-accent] [class*="prc-components-UnderlineItem"][aria-selected="true"] [data-component="icon"],
+html[data-ghe-tab-accent] .UnderlineNav-item[aria-current]:not([aria-current="false"]) .octicon,
+html[data-ghe-tab-accent] .UnderlineNav-item[aria-selected="true"] .octicon {
+  color: inherit !important;
+  fill: currentColor !important;
+}
+
+/* Hovering the selected tab keeps it blue (Primer would reset it to the
+   default foreground). */
+html[data-ghe-tab-accent] [class*="prc-components-UnderlineItem"][aria-current]:not([aria-current="false"]):hover,
+html[data-ghe-tab-accent] [class*="prc-components-UnderlineItem"][aria-selected="true"]:hover,
+html[data-ghe-tab-accent] .UnderlineNav-item[aria-current]:not([aria-current="false"]):hover,
+html[data-ghe-tab-accent] .UnderlineNav-item[aria-selected="true"]:hover {
+  color: var(--fgColor-accent, var(--color-accent-fg, #0969da)) !important;
+}
+
 /* ============================ PR page redesign ============================
    Active only while Appearance → "Enable Pull Request Page Redesign" is on
    AND the current page is a pull request (attribute set by redesign.ts).

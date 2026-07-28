@@ -61,9 +61,11 @@ Hide sidebar sections you don’t use on PR/issue pages.
   reload.
 - *Lock conversation* hides just that control, not a neighbouring Pin button.
 
-### 4. Repository Tabs — My Pull Requests
+### 4. Repository Tabs
 
-Renames a repository's **Pull requests** tab to **My Pull Requests** and points
+Two independent toggles for the tab bar at the top of every repository.
+
+**My Pull Requests** renames a repository's **Pull requests** tab and points
 it at the same page filtered to your own open PRs
 (`/owner/repo/pulls?q=is:pr+is:open+author:@me`).
 
@@ -75,6 +77,17 @@ it at the same page filtered to your own open PRs
   re-applies it if React resets the link). The original link and label are
   stashed on the anchor, so turning the option off restores them without a
   reload.
+
+**Blue selected tab** drops the orange underline under the selected tab and
+colors its label and icon accent blue instead.
+
+- Pure CSS, keyed off an attribute on `<html>`, so there is nothing to
+  reconcile per tab and it survives GitHub's re-renders for free.
+- The color is GitHub's own `--fgColor-accent` token, so it follows every
+  native theme (light, dark, dimmed, custom).
+- Covers both the React tab bar (`prc-components-UnderlineItem-*`, matched by
+  prefix — the rest of the class name is a build hash) and the classic
+  `.UnderlineNav-item` markup. The counter pill keeps its native styling.
 
 ### 5. Comments — Hide as outdated
 

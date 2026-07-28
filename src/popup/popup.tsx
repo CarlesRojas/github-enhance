@@ -99,6 +99,17 @@ function NavigationGroup({ settings, update }: GroupProps) {
           />
         }
       />
+      <Row
+        label="Blue selected tab"
+        description="Color the selected tab's text and icon accent blue instead of underlining it in orange."
+        control={
+          <Toggle
+            checked={settings.nav.accentSelectedTab}
+            label="Blue selected tab"
+            onChange={(v) => update((s) => (s.nav.accentSelectedTab = v))}
+          />
+        }
+      />
     </Group>
   );
 }

@@ -1,5 +1,9 @@
-// Feature 6: "My Pull Requests" — rename the repository's "Pull requests" tab
-// and point it at the same page, pre-filtered to your own open pull requests.
+// Feature 6: repository tab bar tweaks.
+//
+//   • myPullRequests   — rename the "Pull requests" tab and point it at the
+//     same page, pre-filtered to your own open pull requests.
+//   • accentSelectedTab — drop the selected tab's orange underline and color
+//     its label + icon accent blue instead (pure CSS, see content.css).
 //
 // The tab keeps its icon, position and behaviour; only its href and label
 // change. The filter uses GitHub's own search syntax with the `@me`
@@ -15,6 +19,8 @@ import { Settings } from '../../shared/settings';
 
 /** Marks a patched tab; holds the JSON needed to restore it. */
 const MARK = 'data-ghe-my-prs';
+/** Drives the selected-tab accent styling in content.css. */
+const ACCENT_ATTR = 'data-ghe-tab-accent';
 const LABEL = 'My Pull Requests';
 const FILTER = 'is:pr is:open author:@me';
 
@@ -109,6 +115,10 @@ function restore(tab: HTMLAnchorElement): void {
 }
 
 export function applyNav(settings: Settings): void {
+  // Styling only — the attribute is all content.css needs, so there is nothing
+  // to reconcile per tab and it survives GitHub's re-renders for free.
+  document.documentElement.toggleAttribute(ACCENT_ATTR, settings.nav.accentSelectedTab);
+
   const on = settings.nav.myPullRequests;
   prTabs().forEach((tab) => (on ? patch(tab) : restore(tab)));
 }
