@@ -588,8 +588,17 @@ html[data-ghe-redesign]
 
 /* 5. Header navigation tabs (Conversation / Commits / Checks / Files changed)
    as pill cards. Scoped to the PR header's TabNav via its stable
-   data-component; the hashed prc-TabNav-* class names are matched by prefix
-   only. The tabs are the only [role="tab"] elements inside it. */
+   data-component, inside which GitHub has shipped two generations of markup:
+
+     • Primer TabNav — nav.prc-TabNav-* > [role="tablist"] > a[role="tab"],
+       selected marked with aria-selected="true".
+     • CSS-module nav — nav.PullRequestHeaderTabNav-module__TabNav* >
+       div.…__TabNavList* > a.…__TabNavLink*, selected marked with
+       aria-current="page" (plus a hashed …__selected* class).
+
+   Every rule below targets both: semantics first (roles / aria / the fact
+   that the tab bar is the only <nav> in PH_Navigation and its tabs its only
+   <a>s), hashed class names by stable-prefix fallback only. */
 
 /* The tab row gets breathing room from the content below it (the border it
    used to sit flush against is gone). */
@@ -597,44 +606,68 @@ html[data-ghe-redesign] [data-component="PH_Navigation"] {
   margin-bottom: var(--ghe-gap);
 }
 
-/* The nav and tablist lose their bottom border / underline entirely. */
-html[data-ghe-redesign] [data-component="PH_Navigation"] nav[class*="prc-TabNav"],
-html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tablist"] {
+/* The nav and its tab list lose their bottom border / underline entirely. */
+html[data-ghe-redesign] [data-component="PH_Navigation"] nav,
+html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tablist"],
+html[data-ghe-redesign] [data-component="PH_Navigation"] [class*="TabNavList"] {
   border: 0 !important;
   box-shadow: none !important;
 }
-html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tablist"] {
+html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tablist"],
+html[data-ghe-redesign] [data-component="PH_Navigation"] [class*="TabNavList"] {
   gap: var(--ghe-gap);
 }
 
 /* Each tab is a card: same bg, border, and radius as the sidebar cards.
-   The border replaces the selected tab's top/side border, and the -1px
-   bottom margin (which overlapped the now-removed nav border) is reset. */
-html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tab"] {
+   The border replaces the selected tab's top/side border (old) / underline
+   (new), and the -1px bottom margin (which overlapped the now-removed nav
+   border) is reset. */
+html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tab"],
+html[data-ghe-redesign] [data-component="PH_Navigation"] nav a {
   background-color: var(--ghe-card-bg) !important;
   border: 1px solid var(--ghe-card-border) !important;
   border-radius: var(--ghe-radius) !important;
   margin-bottom: 0 !important;
   box-shadow: none !important;
   padding: 6px 16px !important;
+  text-decoration: none !important;
 }
-html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tab"]:hover {
+html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tab"]:hover,
+html[data-ghe-redesign] [data-component="PH_Navigation"] nav a:hover {
   background-color: var(--ghe-card-hover-bg) !important;
-  text-decoration: none;
+  text-decoration: none !important;
+}
+
+/* The new markup can draw the selected tab's underline indicator with a
+   pseudo-element on the link itself; the card border replaces it. */
+html[data-ghe-redesign] [data-component="PH_Navigation"] [role="tab"]::after,
+html[data-ghe-redesign] [data-component="PH_Navigation"] nav a::after {
+  display: none !important;
 }
 
 /* The selected tab is highlighted: accent-tinted bg + accent border.
-   aria-selected is the stable signal (the .selected class is hash-adjacent
-   and GitHub keeps it in sync with the attribute anyway). */
+   aria-selected (old) / aria-current (new) are the stable signals; the
+   hashed …__selected* module class is kept as a fallback in case a future
+   revision drops the aria attribute. */
 html[data-ghe-redesign]
   [data-component="PH_Navigation"]
-  [role="tab"][aria-selected="true"] {
+  [role="tab"][aria-selected="true"],
+html[data-ghe-redesign]
+  [data-component="PH_Navigation"]
+  nav
+  a[aria-current]:not([aria-current="false"]),
+html[data-ghe-redesign] [data-component="PH_Navigation"] nav a[class*="__selected"] {
   background-color: var(--ghe-selected-bg) !important;
   border-color: var(--ghe-selected-border) !important;
 }
 html[data-ghe-redesign]
   [data-component="PH_Navigation"]
-  [role="tab"][aria-selected="true"]:hover {
+  [role="tab"][aria-selected="true"]:hover,
+html[data-ghe-redesign]
+  [data-component="PH_Navigation"]
+  nav
+  a[aria-current]:not([aria-current="false"]):hover,
+html[data-ghe-redesign] [data-component="PH_Navigation"] nav a[class*="__selected"]:hover {
   background-color: var(--ghe-selected-hover-bg) !important;
 }
 
