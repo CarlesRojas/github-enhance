@@ -7,7 +7,12 @@ import { Settings, loadSettings, onSettingsChanged } from '../shared/settings';
 import { applyDates } from './features/dates';
 import { applySidebar } from './features/sidebar';
 import { applyHideButtons } from './features/hideComments';
-import { applyLayout, resetLayout } from './features/layout';
+import {
+  applyLayout,
+  checksMisplaced,
+  invalidateLayout,
+  resetLayout,
+} from './features/layout';
 import { applyNav } from './features/nav';
 import { applyNotices } from './features/notices';
 import { applyRedesign } from './features/redesign';
@@ -84,6 +89,27 @@ async function init(): Promise<void> {
     clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => schedule(), 150);
   });
+
+  // Safety-net poll. GitHub's React re-renders can drop the relocated checks
+  // box from the sidebar in ways the mutation observer misses (notably after
+  // Turbo tab navigation). Twice a second, if the checks belong in the sidebar
+  // but aren't visibly there, force a clean reconcile. It's a no-op — and never
+  // touches the DOM — while the box is healthy, so it can't cause flicker. The
+  // log is edge-triggered so a persistently broken window can't spam it.
+  let loggedMisplaced = false;
+  window.setInterval(() => {
+    if (!current) return;
+    if (checksMisplaced(current)) {
+      if (!loggedMisplaced) {
+        console.debug('[github-enhance] checks not in sidebar — reconciling');
+        loggedMisplaced = true;
+      }
+      invalidateLayout();
+      schedule();
+    } else {
+      loggedMisplaced = false;
+    }
+  }, 500);
 }
 
 void init();

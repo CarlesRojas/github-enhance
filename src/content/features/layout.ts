@@ -339,6 +339,32 @@ function checksPlacement(settings: Settings): ChecksPlacement {
   return sidebarIsColumn() ? 'sidebar' : 'top';
 }
 
+/**
+ * True when the checks box belongs in the sidebar but isn't visibly there:
+ * missing, moved out, or collapsed to zero height (React can empty or remount
+ * the mergebox in ways the mutation observer doesn't always surface). Used by a
+ * timer in the content script as a self-healing safety net.
+ */
+export function checksMisplaced(settings: Settings): boolean {
+  if (!settings.layout.checksTop || !isPRPage()) return false;
+  if (!document.querySelector('.js-discussion')) return false;
+  if (checksPlacement(settings) !== 'sidebar') return false;
+
+  const sidebar = findSidebar();
+  const moved = document.querySelector<HTMLElement>(MERGE_BOX_MOVED_SEL);
+  return !(
+    sidebar &&
+    moved &&
+    sidebar.contains(moved) &&
+    moved.getBoundingClientRect().height > 0
+  );
+}
+
+/** Drop the layout signature so the next applyLayout reconciles from scratch. */
+export function invalidateLayout(): void {
+  document.querySelector('.js-discussion')?.removeAttribute(SIG);
+}
+
 function insertAfterDescription(
   node: HTMLElement,
   discussion: HTMLElement,
