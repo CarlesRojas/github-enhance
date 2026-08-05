@@ -119,11 +119,19 @@ interface Movable extends HTMLElement {
   __ghePlaceholder?: Comment;
 }
 
+// Every placeholder we create, tracked so orphans can be swept. When React
+// remounts a box we moved, it removes our relocated node without touching the
+// placeholder comment left at the origin — resetLayout restores nodes via
+// their placeholder ref, so a removed node's placeholder would otherwise
+// linger and accumulate over a long-open page.
+const placeholders = new Set<Comment>();
+
 function markOrigin(node: Movable): void {
   if (node.getAttribute(MOVED) === '1') return;
   const placeholder = document.createComment('ghe-layout-placeholder');
   node.parentElement?.insertBefore(placeholder, node);
   node.__ghePlaceholder = placeholder;
+  placeholders.add(placeholder);
   node.setAttribute(MOVED, '1');
 }
 
@@ -155,9 +163,14 @@ export function resetLayout(): void {
       ph.parentElement.insertBefore(node, ph);
       ph.remove();
     }
+    if (ph) placeholders.delete(ph);
     node.__ghePlaceholder = undefined;
     node.removeAttribute(MOVED);
   });
+  // Sweep placeholders whose moved node never came back through the loop above
+  // (React removed it), so orphaned comments don't pile up at the origin.
+  placeholders.forEach((ph) => ph.remove());
+  placeholders.clear();
   document.querySelectorAll<HTMLElement>('.' + LIFTED).forEach((el) => {
     ['margin-left', 'padding-left', 'margin-top', 'margin-bottom'].forEach((p) =>
       el.style.removeProperty(p),
@@ -178,6 +191,15 @@ function descriptionEntry(discussion: HTMLElement): HTMLElement | null {
     ) ?? null
   );
 }
+
+// Every checks / merge box variant. The two containers are what GitHub mounts
+// at the top level (classic server-rendered id, and the newer React mergebox);
+// the trailing classic selectors are older/fallback forms.
+const MERGE_BOX_CONTAINER_SEL = '#partial-pull-merging, [data-testid="mergebox-partial"]';
+const MERGE_BOX_SEL = `${MERGE_BOX_CONTAINER_SEL}, .js-merge-pr, .merge-pr, .merge-message`;
+const MERGE_BOX_MOVED_SEL = MERGE_BOX_SEL.split(',')
+  .map((s) => `${s.trim()}[${MOVED}="1"]`)
+  .join(', ');
 
 /** The checks / merge status box (classic id, or the newer React mergebox). */
 function findMergeBox(): HTMLElement | null {
@@ -200,6 +222,42 @@ function mergeBoxLoading(box: HTMLElement): boolean {
   return !!box.querySelector('[class*="MergeBox-module__mergeboxLoading"]');
 }
 
+/** The checks / merge box we already relocated (marked as moved). */
+function movedMergeBoxPresent(): boolean {
+  return !!document.querySelector<HTMLElement>(MERGE_BOX_MOVED_SEL);
+}
+
+/**
+ * True when a settled checks / merge box that we have NOT moved is on the page.
+ * GitHub's React re-renders the mergebox on CI updates and can remount a fresh
+ * copy at the origin, orphaning the one we relocated into the sidebar — the
+ * "checks disappeared from the sidebar after a while" symptom. A fresh box is
+ * the signal to reconcile. Boxes still loading are skipped so we swap only once
+ * the replacement is ready, avoiding a flicker.
+ */
+function freshMergeBoxPresent(): boolean {
+  const boxes = document.querySelectorAll<HTMLElement>(MERGE_BOX_CONTAINER_SEL);
+  for (const box of boxes) {
+    if (box.getAttribute(MOVED) === '1') continue; // the one we relocated
+    if (box.closest(`[${MOVED}="1"]`)) continue; // nested inside it
+    if (mergeBoxLoading(box)) continue; // not ready to move yet
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Whether the current placement still holds. The signature alone can't tell:
+ * React can silently swap the mergebox out from under us without any settings
+ * change, so verify the checks box is where we left it and no fresh, unmoved
+ * copy has appeared.
+ */
+function checksIntact(checks: ChecksPlacement): boolean {
+  if (checks === 'off') return true;
+  if (freshMergeBoxPresent()) return false; // React remounted a fresh copy
+  return movedMergeBoxPresent(); // our relocated copy still present
+}
+
 /** The "Add a comment" composer only — NOT other people's / CI comments. */
 function findComposeBox(): HTMLElement | null {
   const field = document.querySelector<HTMLElement>(
@@ -220,21 +278,48 @@ function findSidebar(): HTMLElement | null {
   );
 }
 
+/** The main conversation column the sidebar sits beside (classic + React). */
+function findMainColumn(): HTMLElement | null {
+  return (
+    document.querySelector<HTMLElement>('.Layout-main') ||
+    document.querySelector<HTMLElement>('[class*="prc-PageLayout-ContentWrapper"]') ||
+    document.querySelector<HTMLElement>('.js-discussion')
+  );
+}
+
 /**
- * True when the sidebar is rendered as a right-hand column (desktop widths).
+ * True when the sidebar is rendered as a right-hand column rather than stacked
+ * below the content.
  *
- * IMPORTANT: this must not depend on the sidebar's own geometry relative to
- * the viewport midpoint — widening the pane moves its left edge, which made a
- * position-based check flip its own answer and oscillate (widen → "not a
- * column" → unwiden → "column" → …). The viewport breakpoint (Primer's lg,
- * where PageLayout shows panes as columns) is independent of anything we do.
+ * Detected from geometry — the sidebar sits to the right of the main column —
+ * not a fixed viewport breakpoint. GitHub flips the sidebar to a column below
+ * 1012px on some layouts, and the old hard-coded `>= 1012` left the checks box
+ * stranded below the description while a real sidebar was on screen at those
+ * in-between widths.
+ *
+ * IMPORTANT: the test must not depend on the sidebar's position relative to the
+ * viewport midpoint — widening the pane (which we do whenever it's a column)
+ * moves its left edge, and a midpoint test would flip its own answer and
+ * oscillate (widen → "not a column" → unwiden → "column" → …). Comparing the
+ * sidebar's left edge to the main column's right edge is stable under widening:
+ * the two panes stay adjacent, so the sidebar's left edge remains past the main
+ * column's right edge at every column width.
  */
 function sidebarIsColumn(): boolean {
   const sidebar = findSidebar();
   if (!sidebar) return false;
-  const r = sidebar.getBoundingClientRect();
-  if (r.width === 0 || r.height === 0) return false; // hidden (stacked/mobile)
-  return window.innerWidth >= 1012;
+  const sr = sidebar.getBoundingClientRect();
+  if (sr.width === 0 || sr.height === 0) return false; // hidden (stacked/mobile)
+
+  const main = findMainColumn();
+  if (!main) return window.innerWidth >= 1012; // fallback: Primer's lg breakpoint
+  const mr = main.getBoundingClientRect();
+  if (mr.width === 0 || mr.height === 0) return window.innerWidth >= 1012;
+
+  // Side-by-side when the sidebar starts at or past the main column's right
+  // edge; stacked when it shares the main column's horizontal span and sits
+  // below it. 1px tolerance absorbs sub-pixel rounding.
+  return sr.left >= mr.right - 1;
 }
 
 type ChecksPlacement = 'off' | 'top' | 'sidebar';
@@ -287,7 +372,21 @@ export function applyLayout(settings: Settings): void {
   const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';
   const sig = `${checks}:${compose}`;
   const current = discussion.getAttribute(SIG) ?? 'off:off';
-  if (current === sig) return;
+  // Skip only when the arrangement is unchanged AND still intact. The signature
+  // alone isn't enough: GitHub's React can remount the mergebox on a CI update
+  // with no settings change, orphaning the copy we moved into the sidebar, and
+  // a signature-only guard would never re-reconcile it (checks vanish from the
+  // sidebar after the page has been open a while).
+  if (current === sig && checksIntact(checks)) return;
+
+  // A remounted mergebox leaves our relocated copy a stale orphan. Drop it (its
+  // placeholder is swept by resetLayout) so the clean-slate reset below doesn't
+  // restore it as a duplicate of the fresh box React mounted at the origin.
+  if (checks !== 'off' && freshMergeBoxPresent()) {
+    document
+      .querySelectorAll<HTMLElement>(MERGE_BOX_MOVED_SEL)
+      .forEach((node) => node.remove());
+  }
 
   // Reconcile from a clean slate every time the desired arrangement changes.
   resetLayout();
