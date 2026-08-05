@@ -7,7 +7,7 @@ import { Settings, loadSettings, onSettingsChanged } from '../shared/settings';
 import { applyDates } from './features/dates';
 import { applySidebar } from './features/sidebar';
 import { applyHideButtons } from './features/hideComments';
-import { applyLayout } from './features/layout';
+import { applyLayout, resetLayout } from './features/layout';
 import { applyNav } from './features/nav';
 import { applyNotices } from './features/notices';
 import { applyRedesign } from './features/redesign';
@@ -68,6 +68,14 @@ async function init(): Promise<void> {
   for (const evt of ['turbo:load', 'turbo:render', 'pjax:end', 'pageshow']) {
     document.addEventListener(evt, () => schedule());
   }
+
+  // Before Turbo snapshots the page for its cache (e.g. when switching to the
+  // Files-changed tab), undo our layout moves so the cached Conversation view
+  // is pristine. Otherwise it comes back with a stale, orphaned checks box —
+  // React remounts a fresh mergebox at the origin and the relocated copy is
+  // lost, so the checks "disappear" from the sidebar after switching tabs and
+  // back. On restore, applyLayout reconciles from the clean slate.
+  document.addEventListener('turbo:before-cache', () => run('layout-reset', resetLayout));
 
   // The checks box hops between the timeline top and the sidebar by width, so
   // re-evaluate when the window is resized (debounced).

@@ -255,7 +255,17 @@ function freshMergeBoxPresent(): boolean {
 function checksIntact(checks: ChecksPlacement): boolean {
   if (checks === 'off') return true;
   if (freshMergeBoxPresent()) return false; // React remounted a fresh copy
-  return movedMergeBoxPresent(); // our relocated copy still present
+  const moved = document.querySelector<HTMLElement>(MERGE_BOX_MOVED_SEL);
+  if (!moved) return false; // our relocated copy is gone
+  // …and it must still sit where we put it. Navigating to another tab and back
+  // can restore a cached snapshot whose moved marker survived while the box no
+  // longer lives inside the freshly re-rendered sidebar — the "checks vanish
+  // when I switch tabs and come back" symptom.
+  if (checks === 'sidebar') {
+    const sidebar = findSidebar();
+    if (!sidebar || !sidebar.contains(moved)) return false;
+  }
+  return true;
 }
 
 /** The "Add a comment" composer only — NOT other people's / CI comments. */
