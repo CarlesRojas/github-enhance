@@ -128,10 +128,14 @@ const placeholders = new Set<Comment>();
 
 function markOrigin(node: Movable): void {
   if (node.getAttribute(MOVED) === '1') return;
-  const placeholder = document.createComment('ghe-layout-placeholder');
-  node.parentElement?.insertBefore(placeholder, node);
-  node.__ghePlaceholder = placeholder;
-  placeholders.add(placeholder);
+  // A rescued node is detached and has no origin to return to — skip the
+  // placeholder and just mark it, so resetLayout leaves it where it lands.
+  if (node.parentElement) {
+    const placeholder = document.createComment('ghe-layout-placeholder');
+    node.parentElement.insertBefore(placeholder, node);
+    node.__ghePlaceholder = placeholder;
+    placeholders.add(placeholder);
+  }
   node.setAttribute(MOVED, '1');
 }
 
@@ -200,6 +204,28 @@ const MERGE_BOX_SEL = `${MERGE_BOX_CONTAINER_SEL}, .js-merge-pr, .merge-pr, .mer
 const MERGE_BOX_MOVED_SEL = MERGE_BOX_SEL.split(',')
   .map((s) => `${s.trim()}[${MOVED}="1"]`)
   .join(', ');
+
+// The checks box most recently relocated, and the PR it belongs to. When a
+// view teardown we failed to intercept detaches the sidebar (taking the
+// relocated box with it) while React still considers the mergebox mounted, no
+// fresh copy is ever mounted at the origin — the box survives only as this
+// detached node, and waiting for a replacement waits forever (the "checks
+// vanish until reload" symptom). Keeping a handle lets applyLayout re-adopt it.
+let lastMergeBox: Movable | null = null;
+let lastMergeBoxPR = '';
+
+/** The `/owner/repo/pull/123` prefix of the current URL, or '' off PR pages. */
+function prBasePath(): string {
+  return location.pathname.match(/^\/[^/]+\/[^/]+\/pull\/\d+/)?.[0] ?? '';
+}
+
+/** A detached, previously relocated checks box belonging to the current PR. */
+function rescuableMergeBox(): Movable | null {
+  if (!lastMergeBox || lastMergeBox.isConnected) return null;
+  const pr = prBasePath();
+  if (!pr || pr !== lastMergeBoxPR) return null;
+  return lastMergeBox;
+}
 
 /** The checks / merge status box (classic id, or the newer React mergebox). */
 function findMergeBox(): HTMLElement | null {
@@ -431,7 +457,21 @@ export function applyLayout(settings: Settings): void {
   const safe = (n: HTMLElement | null): n is HTMLElement =>
     !!n && n !== discussion && !n.contains(discussion);
 
-  const mergeBox = checks !== 'off' ? findMergeBox() : null;
+  let mergeBox = checks !== 'off' ? findMergeBox() : null;
+  // No mergebox anywhere in the document, but the one we relocated earlier
+  // survives as a detached node (its ancestors were removed in a teardown we
+  // didn't intercept, and React never mounts a fresh copy because it still
+  // considers this one mounted): re-adopt it. Its stale bookkeeping is cleared
+  // so it's treated as a fresh move — its original home is gone with the old
+  // view anyway.
+  if (checks !== 'off' && !mergeBox) {
+    const orphan = rescuableMergeBox();
+    if (orphan) {
+      orphan.removeAttribute(MOVED);
+      orphan.__ghePlaceholder = undefined;
+      mergeBox = orphan;
+    }
+  }
   const composeBox = compose !== 'off' ? findComposeBox() : null;
   const sidebar = checks === 'sidebar' ? findSidebar() : null;
 
@@ -454,6 +494,8 @@ export function applyLayout(settings: Settings): void {
 
   if (safe(mergeBox)) {
     markOrigin(mergeBox);
+    lastMergeBox = mergeBox;
+    lastMergeBoxPR = prBasePath();
     if (checks === 'sidebar' && sidebar) {
       lift(mergeBox, true);
       sidebar.prepend(mergeBox);

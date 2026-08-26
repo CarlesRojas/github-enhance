@@ -21,6 +21,12 @@ let current: Settings | null = null;
 let scheduled = false;
 let observer: MutationObserver | null = null;
 
+// True while a soft navigation is in flight. Layout moves are suppressed so
+// the mutation observer can't re-relocate the checks box into a view that's
+// about to be torn down.
+let navigating = false;
+let navigatingTimer = 0;
+
 function run(name: string, fn: () => void): void {
   try {
     fn();
@@ -37,7 +43,9 @@ function applyAll(settings: Settings): void {
     run('dates', () => applyDates(settings));
     run('sidebar', () => applySidebar(settings));
     run('hideComments', () => applyHideButtons(settings));
-    run('layout', () => applyLayout(settings));
+    run('layout', () => {
+      if (!navigating) applyLayout(settings);
+    });
     run('nav', () => applyNav(settings));
     run('notices', () => applyNotices(settings));
     run('redesign', () => applyRedesign(settings));
@@ -69,17 +77,52 @@ async function init(): Promise<void> {
     applyAll(settings);
   });
 
-  // GitHub navigates without full reloads; re-apply on those transitions.
-  for (const evt of ['turbo:load', 'turbo:render', 'pjax:end', 'pageshow']) {
-    document.addEventListener(evt, () => schedule());
+  // A soft navigation is starting: restore every moved node to its origin
+  // BEFORE the old view is torn down, and hold off re-applying until the
+  // navigation settles (endNavigation). React removes a child from the parent
+  // it rendered it into, so a box still relocated at teardown breaks the
+  // unmount, gets lost with the detached tree, and — because React still
+  // considers the mergebox mounted — no fresh copy is mounted on return: the
+  // checks vanish until a full reload.
+  const beginNavigation = (): void => {
+    navigating = true;
+    run('layout-reset', resetLayout);
+    // Failsafe: resume even if no end/success event ever arrives.
+    clearTimeout(navigatingTimer);
+    navigatingTimer = window.setTimeout(endNavigation, 3000);
+  };
+  const endNavigation = (): void => {
+    clearTimeout(navigatingTimer);
+    navigating = false;
+    schedule();
+  };
+
+  // GitHub instruments every soft navigation — Turbo and the React-Router
+  // ones (e.g. the PR Conversation ⇄ Files-changed tabs, where no turbo:*
+  // event ever fires) — with soft-nav:* events on document. popstate covers
+  // history back/forward, which can skip soft-nav:start.
+  for (const evt of ['soft-nav:start', 'turbo:before-visit']) {
+    document.addEventListener(evt, beginNavigation);
+  }
+  window.addEventListener('popstate', beginNavigation);
+  for (const evt of ['soft-nav:end', 'soft-nav:success', 'soft-nav:fail']) {
+    document.addEventListener(evt, endNavigation);
   }
 
+  // GitHub navigates without full reloads; re-apply on those transitions.
+  // These also mark the end of a navigation for surfaces that never emit
+  // soft-nav events (older Turbo/pjax pages, bfcache restores).
+  for (const evt of ['turbo:load', 'turbo:render', 'pjax:end']) {
+    document.addEventListener(evt, endNavigation);
+  }
+  window.addEventListener('pageshow', endNavigation);
+
   // Before Turbo snapshots the page for its cache (e.g. when switching to the
-  // Files-changed tab), undo our layout moves so the cached Conversation view
-  // is pristine. Otherwise it comes back with a stale, orphaned checks box —
-  // React remounts a fresh mergebox at the origin and the relocated copy is
-  // lost, so the checks "disappear" from the sidebar after switching tabs and
-  // back. On restore, applyLayout reconciles from the clean slate.
+  // Files-changed tab on Turbo-driven views), undo our layout moves so the
+  // cached Conversation view is pristine. Otherwise it comes back with a
+  // stale, orphaned checks box — React remounts a fresh mergebox at the origin
+  // and the relocated copy is lost. On restore, applyLayout reconciles from
+  // the clean slate.
   document.addEventListener('turbo:before-cache', () => run('layout-reset', resetLayout));
 
   // The checks box hops between the timeline top and the sidebar by width, so
@@ -98,7 +141,9 @@ async function init(): Promise<void> {
   // log is edge-triggered so a persistently broken window can't spam it.
   let loggedMisplaced = false;
   window.setInterval(() => {
-    if (!current) return;
+    // Paused mid-navigation: the old view is being torn down and moving the
+    // box back into it would recreate the very orphaning this poll heals.
+    if (!current || navigating) return;
     if (checksMisplaced(current)) {
       if (!loggedMisplaced) {
         console.debug('[github-enhance] checks not in sidebar — reconciling');
