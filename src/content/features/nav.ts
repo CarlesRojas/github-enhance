@@ -1,6 +1,6 @@
 // Feature 6: repository tab bar tweaks.
 //
-//   • myPullRequests   — add a "My PRs" tab next to the repository's "Pull
+//   • myPullRequests: add a "My PRs" tab next to the repository's "Pull
 //     requests" tab, pointing at the same page pre-filtered to your own open
 //     pull requests.
 //   • accentSelectedTab — drop the selected tab's orange underline and color
@@ -12,17 +12,26 @@
 // search syntax with the `@me` self-reference, so no username lookup (and no
 // extra permission) is needed.
 //
+// While the current page *is* the filtered list, the selected state moves from
+// GitHub's tab to ours: GitHub highlights "Pull requests" on any /pulls URL,
+// including ours, and the highlight belongs on the tab that opened it. What we
+// take off GitHub's tab is stashed on it and handed back the moment the filter
+// no longer matches (or the option is turned off).
+//
 // The tab bar is React-rendered and re-rendered on soft (Turbo) navigation, so
 // every pass asserts the desired state instead of trusting a one-shot marker:
 // a missing clone is re-inserted, an existing one is re-synced (the repository
-// can change under us), and orphans left behind by a re-render are dropped.
+// and the current URL both change under us), and orphans left behind by a
+// re-render are dropped.
 
 import { Settings } from '../../shared/settings';
 
 /** Marks the element we inserted (the <li>, or the anchor if there is none). */
 const MARK = 'data-ghe-my-prs';
-/** The cloned anchor's tab id — distinct so GitHub's own tab logic skips it. */
+/** The cloned anchor's tab id, distinct so GitHub's own tab logic skips it. */
 const CLONE_TAB = 'ghe-my-prs';
+/** Holds GitHub's own selected state while our tab wears it. */
+const STASH = 'data-ghe-selected';
 /** Drives the selected-tab accent styling in content.css. */
 const ACCENT_ATTR = 'data-ghe-tab-accent';
 const LABEL = 'My PRs';
@@ -65,6 +74,84 @@ function filtered(href: string): string {
   return url.pathname + url.search;
 }
 
+/**
+ * True while the page being viewed is the list our tab opens: the same path,
+ * searched for your own PRs. Matched on `author:@me` alone rather than the
+ * whole query, so narrowing the filter on the page (adding a label, dropping
+ * `is:open`) keeps the tab highlighted.
+ */
+function showsOurList(href: string): boolean {
+  const url = new URL(href, location.origin);
+  if (url.pathname !== location.pathname) return false;
+  const q = new URLSearchParams(location.search).get('q') ?? '';
+  return q.toLowerCase().includes('author:@me');
+}
+
+/**
+ * How a tab says it is the current one. Primer's underline nav and the classic
+ * markup disagree, so all three carriers travel together.
+ */
+interface Marks {
+  current: string | null;
+  selected: string | null;
+  klass: boolean;
+}
+
+function readMarks(el: HTMLElement): Marks {
+  return {
+    current: el.getAttribute('aria-current'),
+    selected: el.getAttribute('aria-selected'),
+    klass: el.classList.contains('selected'),
+  };
+}
+
+function writeMarks(el: HTMLElement, marks: Marks): void {
+  for (const [name, value] of [
+    ['aria-current', marks.current],
+    ['aria-selected', marks.selected],
+  ] as const) {
+    if (value === null) el.removeAttribute(name);
+    else if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+  }
+  el.classList.toggle('selected', marks.klass);
+}
+
+const NO_MARKS: Marks = { current: null, selected: null, klass: false };
+const DEFAULT_MARKS: Marks = { current: 'page', selected: null, klass: false };
+
+/** Take GitHub's selected state off its tab, stashing it for later. */
+function claimMarks(source: HTMLAnchorElement): Marks {
+  const stashed = source.getAttribute(STASH);
+  if (stashed !== null) {
+    // Already ours; React may have re-marked the tab since, so clear it again.
+    writeMarks(source, NO_MARKS);
+    try {
+      return JSON.parse(stashed) as Marks;
+    } catch {
+      return DEFAULT_MARKS;
+    }
+  }
+
+  const marks = readMarks(source);
+  source.setAttribute(STASH, JSON.stringify(marks));
+  writeMarks(source, NO_MARKS);
+  // GitHub marks its tab on every /pulls URL, ours included, but if this
+  // markup carries the state some other way, still highlight our tab.
+  return marks.current || marks.selected || marks.klass ? marks : DEFAULT_MARKS;
+}
+
+/** Hand GitHub's selected state back. */
+function releaseMarks(source: HTMLAnchorElement): void {
+  const stashed = source.getAttribute(STASH);
+  if (stashed === null) return;
+  source.removeAttribute(STASH);
+  try {
+    writeMarks(source, JSON.parse(stashed) as Marks);
+  } catch {
+    /* nothing sane to restore: leave the tab as GitHub last rendered it */
+  }
+}
+
 /** Point the clone's anchor at our filtered URL and label it. */
 function sync(clone: HTMLElement, source: HTMLAnchorElement): void {
   const anchor = anchorIn(clone);
@@ -89,22 +176,26 @@ function sync(clone: HTMLElement, source: HTMLAnchorElement): void {
   }
 
   // GitHub's counter counts *all* open PRs, so it doesn't describe what our
-  // tab opens — the repo-wide count stays on GitHub's own tab.
+  // tab opens, so the repo-wide count stays on GitHub's own tab.
   counter(anchor)?.remove();
 
-  // GitHub keeps its own tab highlighted on /pulls; a second highlighted tab
-  // would only be confusing, so ours never claims the selected state.
-  for (const el of [clone, anchor]) {
-    el.removeAttribute('aria-current');
-    el.removeAttribute('aria-selected');
+  // Exactly one tab is highlighted: ours while its list is what's on screen,
+  // GitHub's otherwise.
+  let marks = NO_MARKS;
+  if (showsOurList(anchor.href)) {
+    marks = claimMarks(source);
+  } else {
+    releaseMarks(source);
   }
+  writeMarks(anchor, marks);
+  if (clone !== anchor) writeMarks(clone, marks);
 }
 
 function build(source: HTMLAnchorElement): HTMLElement {
   const clone = host(source).cloneNode(true) as HTMLElement;
 
   // Ids would be duplicated across the two tabs, and a cloned <tool-tip>
-  // targets its `for` id — i.e. GitHub's tab — with our label.
+  // targets its `for` id (i.e. GitHub's tab) with our label.
   clone.querySelectorAll('tool-tip').forEach((tip) => tip.remove());
   if (clone.hasAttribute('id')) clone.removeAttribute('id');
   clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
@@ -141,6 +232,7 @@ function apply(): void {
 
 function restore(): void {
   for (const clone of ourTabs()) clone.remove();
+  for (const tab of prTabs()) releaseMarks(tab);
 }
 
 export function applyNav(settings: Settings): void {

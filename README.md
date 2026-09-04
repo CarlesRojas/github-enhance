@@ -67,15 +67,19 @@ Two independent toggles for the tab bar at the top of every repository.
 
 **My PRs** adds a **My PRs** tab right after a repository's **Pull requests**
 tab, pointing at the same page filtered to your own open PRs
-(`/owner/repo/pulls?q=is:pr+is:open+author:@me`). GitHub's own tab is left
-untouched.
+(`/owner/repo/pulls?q=is:pr+is:open+author:@me`). GitHub's own tab keeps its
+link, label and count.
 
 - The filter uses GitHub's `@me` self-reference, so nothing has to look up (or
   store) your username, and no extra permission is needed.
 - The tab is a clone of the **Pull requests** one, so it inherits its icon,
   styling and Turbo behaviour; it drops the repo-wide open-PR counter, which
-  doesn't describe what the tab opens, and never claims the selected state,
-  which stays on GitHub's tab.
+  doesn't describe what the tab opens.
+- While the page you're on *is* that filtered list (any `/pulls` URL whose
+  query includes `author:@me`), the selected highlight moves to **My PRs**.
+  GitHub highlights **Pull requests** on every `/pulls` URL, ours included, so
+  the state is taken off its tab, stashed there, and handed straight back when
+  the filter no longer matches or the option is turned off.
 - The tab bar is React-rendered, so every pass re-asserts the tab: it is
   re-inserted if a re-render drops it, re-synced when the repository changes,
   and orphans are cleaned up. Turning the option off removes it without a
