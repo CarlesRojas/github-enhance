@@ -89,12 +89,12 @@ function NavigationGroup({ settings, update }: GroupProps) {
       description="Tweak the tab bar shown at the top of every repository."
     >
       <Row
-        label="My Pull Requests tab"
-        description="Rename “Pull requests” to “My Pull Requests” and open it filtered to your own open PRs. Hides the tab's repo-wide count."
+        label="My PRs tab"
+        description="Add a “My PRs” tab next to “Pull requests”, opening the same page filtered to your own open PRs."
         control={
           <Toggle
             checked={settings.nav.myPullRequests}
-            label="My Pull Requests tab"
+            label="My PRs tab"
             onChange={(v) => update((s) => (s.nav.myPullRequests = v))}
           />
         }

@@ -65,17 +65,20 @@ Hide sidebar sections you don’t use on PR/issue pages.
 
 Two independent toggles for the tab bar at the top of every repository.
 
-**My Pull Requests** renames a repository's **Pull requests** tab and points
-it at the same page filtered to your own open PRs
-(`/owner/repo/pulls?q=is:pr+is:open+author:@me`).
+**My PRs** adds a **My PRs** tab right after a repository's **Pull requests**
+tab, pointing at the same page filtered to your own open PRs
+(`/owner/repo/pulls?q=is:pr+is:open+author:@me`). GitHub's own tab is left
+untouched.
 
 - The filter uses GitHub's `@me` self-reference, so nothing has to look up (or
   store) your username, and no extra permission is needed.
-- The tab keeps its icon, position and Turbo behaviour; the repo-wide open-PR
-  counter is hidden, since it no longer describes what the tab opens.
-- The tab bar is React-rendered, so every pass re-asserts the change (and
-  re-applies it if React resets the link). The original link and label are
-  stashed on the anchor, so turning the option off restores them without a
+- The tab is a clone of the **Pull requests** one, so it inherits its icon,
+  styling and Turbo behaviour; it drops the repo-wide open-PR counter, which
+  doesn't describe what the tab opens, and never claims the selected state,
+  which stays on GitHub's tab.
+- The tab bar is React-rendered, so every pass re-asserts the tab: it is
+  re-inserted if a re-render drops it, re-synced when the repository changes,
+  and orphans are cleaned up. Turning the option off removes it without a
   reload.
 
 **Blue selected tab** drops the orange underline under the selected tab and
