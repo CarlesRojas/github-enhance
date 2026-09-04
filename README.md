@@ -63,7 +63,19 @@ Hide sidebar sections you don’t use on PR/issue pages.
 
 ### 4. Repository Tabs
 
-Two independent toggles for the tab bar at the top of every repository.
+Controls for the tab bar at the top of every repository.
+
+**Show or hide any tab.** Each tab in the bar has its own switch: Code, Issues,
+Pull requests, My PRs, Discussions, Actions, Projects, Wiki, Security, Insights
+and Settings.
+
+- A hidden tab is hidden in both places the bar renders it: the underline nav
+  and the menu it spills into at narrow widths.
+- Tabs are matched on GitHub's own `data-tab-item`, normalized so both the
+  current (`code`) and older (`i0code-tab`) markup resolve to the same switch.
+  A tab we have no switch for is left alone.
+- Only tabs we hid are ever shown again, so nothing GitHub itself keeps out of
+  view gets forced back on screen.
 
 **My PRs** adds a **My PRs** tab right after a repository's **Pull requests**
 tab, pointing at the same page filtered to your own open PRs
@@ -82,10 +94,12 @@ link, label and count.
   GitHub highlights **Pull requests** on every `/pulls` URL, ours included, so
   the state is taken off its tab, stashed there, and handed straight back when
   the filter no longer matches or the option is turned off.
+- Its switch decides whether the tab is added at all, rather than adding it
+  and then hiding it: an inert tab would still take its turn in the keyboard
+  order. Turning it off removes the tab without a reload.
 - The tab bar is React-rendered, so every pass re-asserts the tab: it is
   re-inserted if a re-render drops it, re-synced when the repository changes,
-  and orphans are cleaned up. Turning the option off removes it without a
-  reload.
+  and orphans are cleaned up.
 
 **Blue selected tab** drops the orange underline under the selected tab and
 colors its label and icon accent blue instead.

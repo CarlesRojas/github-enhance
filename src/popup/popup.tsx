@@ -4,8 +4,10 @@ import './popup.css';
 import {
   DATE_FORMATS,
   DEFAULT_SETTINGS,
+  MY_PRS_TAB,
   PAGE_WIDTH_DEFAULT,
   PAGE_WIDTH_MAX,
+  REPO_TABS,
   SIDEBAR_PCT_MAX,
   SIDEBAR_PCT_MIN,
   SIDEBAR_SECTIONS,
@@ -86,19 +88,26 @@ function NavigationGroup({ settings, update }: GroupProps) {
   return (
     <Group
       title="Repository Tabs"
-      description="Tweak the tab bar shown at the top of every repository."
+      description="Turn a tab off to hide it from the bar at the top of every repository. “My PRs” is added by this extension, next to “Pull requests”, and opens the same page filtered to your own open PRs."
     >
-      <Row
-        label="My PRs tab"
-        description="Add a “My PRs” tab next to “Pull requests”, opening the same page filtered to your own open PRs."
-        control={
-          <Toggle
-            checked={settings.nav.myPullRequests}
-            label="My PRs tab"
-            onChange={(v) => update((s) => (s.nav.myPullRequests = v))}
+      {REPO_TABS.map((tab) => {
+        const visible = settings.nav.tabs[tab.key] ?? true;
+        const ours = tab.key === MY_PRS_TAB;
+        return (
+          <Row
+            key={tab.key}
+            label={ours ? `${tab.label} (added)` : tab.label}
+            description={visible ? 'Shown' : 'Hidden'}
+            control={
+              <Toggle
+                checked={visible}
+                label={`Show ${tab.label}`}
+                onChange={(v) => update((s) => (s.nav.tabs[tab.key] = v))}
+              />
+            }
           />
-        }
-      />
+        );
+      })}
       <Row
         label="Blue selected tab"
         description="Color the selected tab's text and icon accent blue instead of underlining it in orange."

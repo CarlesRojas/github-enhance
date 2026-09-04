@@ -87,6 +87,34 @@ export const TIME_FORMATS: DateTimeFormat[] = [
   { key: '12s', label: '2:30:05 PM', pattern: 'h:mm:ss A' },
 ];
 
+export interface RepoTabDef {
+  /** GitHub's own `data-tab-item` value, normalized. `my-prs` is our tab. */
+  key: string;
+  label: string;
+}
+
+/**
+ * The repository tab bar, in the order GitHub renders it (with our own tab
+ * where it is inserted). A tab GitHub doesn't render on a given repository
+ * simply never shows up; a tab we don't know about is left alone.
+ */
+export const REPO_TABS: RepoTabDef[] = [
+  { key: 'code', label: 'Code' },
+  { key: 'issues', label: 'Issues' },
+  { key: 'pull-requests', label: 'Pull requests' },
+  { key: 'my-prs', label: 'My PRs' },
+  { key: 'discussions', label: 'Discussions' },
+  { key: 'actions', label: 'Actions' },
+  { key: 'projects', label: 'Projects' },
+  { key: 'wiki', label: 'Wiki' },
+  { key: 'security', label: 'Security' },
+  { key: 'insights', label: 'Insights' },
+  { key: 'settings', label: 'Settings' },
+];
+
+/** Our own tab's key in `nav.tabs`; also decides whether it is added at all. */
+export const MY_PRS_TAB = 'my-prs';
+
 export interface Settings {
   dates: {
     enabled: boolean;
@@ -123,10 +151,10 @@ export interface Settings {
   };
   nav: {
     /**
-     * Add a "My PRs" tab beside the repository's "Pull requests" tab, pointing
-     * at the same page filtered to your own open pull requests.
+     * Repository tab key -> visible (true) / hidden (false). Our own "My PRs"
+     * tab lives here too: turning `my-prs` off stops it being added at all.
      */
-    myPullRequests: boolean;
+    tabs: Record<string, boolean>;
     /**
      * Drop the orange underline under the selected repository tab and color
      * its label and icon accent blue instead.
@@ -152,7 +180,10 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   hideComments: { enabled: true },
   appearance: { redesign: true },
-  nav: { myPullRequests: true, accentSelectedTab: true },
+  nav: {
+    tabs: Object.fromEntries(REPO_TABS.map((t) => [t.key, true])),
+    accentSelectedTab: true,
+  },
 };
 
 const STORAGE_KEY = 'settings';
@@ -168,8 +199,29 @@ export function mergeSettings(partial: unknown): Settings {
     },
     hideComments: { ...DEFAULT_SETTINGS.hideComments, ...(p.hideComments ?? {}) },
     appearance: { ...DEFAULT_SETTINGS.appearance, ...(p.appearance ?? {}) },
-    nav: { ...DEFAULT_SETTINGS.nav, ...(p.nav ?? {}) },
+    nav: mergeNav(p.nav),
   };
+}
+
+/** Settings written before the tab bar had a toggle per tab. */
+interface LegacyNav {
+  /** The single "add a My PRs tab" switch that `nav.tabs['my-prs']` replaced. */
+  myPullRequests?: boolean;
+}
+
+function mergeNav(stored: (Settings['nav'] & LegacyNav) | undefined): Settings['nav'] {
+  const nav: Settings['nav'] = {
+    ...DEFAULT_SETTINGS.nav,
+    ...(stored ?? {}),
+    tabs: { ...DEFAULT_SETTINGS.nav.tabs, ...(stored?.tabs ?? {}) },
+  };
+  // Carry the old single switch over, so anyone who had the tab turned off
+  // doesn't get it back on the next update.
+  if (typeof stored?.myPullRequests === 'boolean' && stored.tabs?.[MY_PRS_TAB] === undefined) {
+    nav.tabs[MY_PRS_TAB] = stored.myPullRequests;
+  }
+  delete (nav as LegacyNav).myPullRequests;
+  return nav;
 }
 
 /** The date pattern that should actually be rendered (date + time combined). */
