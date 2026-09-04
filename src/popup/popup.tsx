@@ -87,6 +87,7 @@ function AppearanceGroup({ settings, update }: GroupProps) {
 function NavigationGroup({ settings, update }: GroupProps) {
   return (
     <Group
+      collapsible
       title="Repository Tabs"
       description="Turn a tab off to hide it from the bar at the top of every repository. “My PRs” is added by this extension, next to “Pull requests”, and opens the same page filtered to your own open PRs."
     >
@@ -328,6 +329,7 @@ function LayoutGroup({ settings, update }: GroupProps) {
 function SidebarGroup({ settings, update }: GroupProps) {
   return (
     <Group
+      collapsible
       title="Pull Request Sidebar"
       description="Turn a section off to hide it on PR & issue pages."
     >
@@ -387,11 +389,13 @@ function App() {
       {settings && (
         <>
           <AppearanceGroup settings={settings} update={update} />
-          <NavigationGroup settings={settings} update={update} />
           <DatesGroup settings={settings} update={update} />
           <LayoutGroup settings={settings} update={update} />
-          <SidebarGroup settings={settings} update={update} />
           <CommentsGroup settings={settings} update={update} />
+          {/* The two per-item lists sit together, collapsed, so they don't
+              bury the switches above them. */}
+          <NavigationGroup settings={settings} update={update} />
+          <SidebarGroup settings={settings} update={update} />
         </>
       )}
     </div>
