@@ -123,8 +123,8 @@ export interface Settings {
   };
   nav: {
     /**
-     * Rename the repository's "Pull requests" tab to "My Pull Requests" and
-     * point it at the same page filtered to your own open pull requests.
+     * Add a "My PRs" tab beside the repository's "Pull requests" tab, pointing
+     * at the same page filtered to your own open pull requests.
      */
     myPullRequests: boolean;
     /**

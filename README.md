@@ -65,17 +65,26 @@ Hide sidebar sections you don’t use on PR/issue pages.
 
 Two independent toggles for the tab bar at the top of every repository.
 
-**My Pull Requests** renames a repository's **Pull requests** tab and points
-it at the same page filtered to your own open PRs
-(`/owner/repo/pulls?q=is:pr+is:open+author:@me`).
+**My PRs** adds a **My PRs** tab right after a repository's **Pull requests**
+tab, pointing at the same page filtered to your own open PRs
+(`/owner/repo/pulls?q=is:pr+is:open+author:@me`). GitHub's own tab keeps its
+link, label and count.
 
 - The filter uses GitHub's `@me` self-reference, so nothing has to look up (or
   store) your username, and no extra permission is needed.
-- The tab keeps its icon, position and Turbo behaviour; the repo-wide open-PR
-  counter is hidden, since it no longer describes what the tab opens.
-- The tab bar is React-rendered, so every pass re-asserts the change (and
-  re-applies it if React resets the link). The original link and label are
-  stashed on the anchor, so turning the option off restores them without a
+- The tab is a clone of the **Pull requests** one, so it inherits its icon,
+  styling and Turbo behaviour; it drops the repo-wide open-PR counter, which
+  doesn't describe what the tab opens.
+- While the page you're on *is* a list of your own PRs, the selected highlight
+  moves to **My PRs**. Both URL shapes count: the `?q=…author:@me` one the tab
+  links to, and GitHub's own `/pulls/@me` shortcut. `review-requested:@me` and
+  friends don't, since those are somebody else's PRs.
+  GitHub highlights **Pull requests** on every `/pulls` URL, ours included, so
+  the state is taken off its tab, stashed there, and handed straight back when
+  the filter no longer matches or the option is turned off.
+- The tab bar is React-rendered, so every pass re-asserts the tab: it is
+  re-inserted if a re-render drops it, re-synced when the repository changes,
+  and orphans are cleaned up. Turning the option off removes it without a
   reload.
 
 **Blue selected tab** drops the orange underline under the selected tab and
