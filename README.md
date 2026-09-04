@@ -63,7 +63,27 @@ Hide sidebar sections you don’t use on PR/issue pages.
 
 ### 4. Repository Tabs
 
-Two independent toggles for the tab bar at the top of every repository.
+Controls for the tab bar at the top of every repository.
+
+**Show or hide any tab.** Every tab in the bar gets its own switch, and the
+list is read off the page rather than baked into the extension: whatever GitHub
+renders today (Code, Issues, Pull requests, My PRs, Agents, Actions, Projects,
+Wiki, Security & quality, Insights, Settings) is what the popup lists, under
+GitHub's own labels.
+
+- The content script publishes the bar it sees to `chrome.storage.local`, and
+  the popup builds its switches from that, so a tab GitHub adds or renames
+  shows up without an extension update. A short built-in list stands in until
+  a repository page has been visited.
+- Tabs are keyed on GitHub's own `data-tab-item`, normalized so both the
+  current (`code`) and older (`i0code-tab`) markup resolve to the same switch.
+  Only the bar itself is read: `data-tab-item` is used elsewhere on GitHub, and
+  those aren't repository tabs.
+- Switches you had set are kept even on a repository that doesn't have that
+  tab, so hiding the wiki on one repo doesn't drop the switch on the next.
+- A hidden tab is hidden in both places the bar renders it: the underline nav
+  and the menu it spills into at narrow widths. Only tabs we hid are ever shown
+  again, so nothing GitHub itself keeps out of view gets forced back on screen.
 
 **My PRs** adds a **My PRs** tab right after a repository's **Pull requests**
 tab, pointing at the same page filtered to your own open PRs
@@ -82,10 +102,12 @@ link, label and count.
   GitHub highlights **Pull requests** on every `/pulls` URL, ours included, so
   the state is taken off its tab, stashed there, and handed straight back when
   the filter no longer matches or the option is turned off.
+- Its switch decides whether the tab is added at all, rather than adding it
+  and then hiding it: an inert tab would still take its turn in the keyboard
+  order. Turning it off removes the tab without a reload.
 - The tab bar is React-rendered, so every pass re-asserts the tab: it is
   re-inserted if a re-render drops it, re-synced when the repository changes,
-  and orphans are cleaned up. Turning the option off removes it without a
-  reload.
+  and orphans are cleaned up.
 
 **Blue selected tab** drops the orange underline under the selected tab and
 colors its label and icon accent blue instead.

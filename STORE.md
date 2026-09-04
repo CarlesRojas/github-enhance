@@ -37,9 +37,10 @@ Hide any sidebar section you don't use, each with its own toggle: Reviewers,
 Assignees, Labels, Projects, Milestone, Development, Notifications,
 Participants, and Lock conversation.
 
-🔎 My PRs tab
-Adds a “My PRs” tab next to a repository's “Pull requests” tab, opening the
-same page filtered to your own open pull requests.
+🔎 Repository tabs
+Show or hide any tab in a repository's tab bar, and add a “My PRs” tab next to
+“Pull requests” that opens the same page filtered to your own open pull
+requests.
 
 🙈 One-click hide
 A Hide button collapses a comment as “outdated” in one click; an Unhide button

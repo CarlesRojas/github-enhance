@@ -6,11 +6,14 @@ import {
   DEFAULT_SETTINGS,
   PAGE_WIDTH_DEFAULT,
   PAGE_WIDTH_MAX,
+  REPO_TABS,
+  RepoTabDef,
   SIDEBAR_PCT_MAX,
   SIDEBAR_PCT_MIN,
   SIDEBAR_SECTIONS,
   Settings,
   TIME_FORMATS,
+  loadRepoTabs,
   loadSettings,
   resolveDatePattern,
   saveSettings,
@@ -37,6 +40,23 @@ function useSettings() {
   }
 
   return { settings, update };
+}
+
+/**
+ * The repository tab bar as the content script last saw it, so the switches
+ * cover whatever GitHub renders today (Agents, "Security & quality", anything
+ * added next). REPO_TABS stands in until a GitHub page has been visited.
+ */
+function useRepoTabs(): RepoTabDef[] {
+  const [tabs, setTabs] = useState<RepoTabDef[]>(REPO_TABS);
+
+  useEffect(() => {
+    loadRepoTabs().then((stored) => {
+      if (stored.length) setTabs(stored);
+    });
+  }, []);
+
+  return tabs;
 }
 
 function Logo() {
@@ -83,22 +103,31 @@ function AppearanceGroup({ settings, update }: GroupProps) {
 }
 
 function NavigationGroup({ settings, update }: GroupProps) {
+  const tabs = useRepoTabs();
+
   return (
     <Group
-      title="Repository Tabs"
-      description="Tweak the tab bar shown at the top of every repository."
+      collapsible
+      title="Hide Repository Tabs"
+      description="Turn a tab off to hide it from the bar at the top of every repository. “My PRs” is added by this extension, next to “Pull requests”, and opens the same page filtered to your own open PRs."
     >
-      <Row
-        label="My PRs tab"
-        description="Add a “My PRs” tab next to “Pull requests”, opening the same page filtered to your own open PRs."
-        control={
-          <Toggle
-            checked={settings.nav.myPullRequests}
-            label="My PRs tab"
-            onChange={(v) => update((s) => (s.nav.myPullRequests = v))}
+      {tabs.map((tab) => {
+        const visible = settings.nav.tabs[tab.key] ?? true;
+        return (
+          <Row
+            key={tab.key}
+            label={tab.label}
+            description={visible ? 'Shown' : 'Hidden'}
+            control={
+              <Toggle
+                checked={visible}
+                label={`Show ${tab.label}`}
+                onChange={(v) => update((s) => (s.nav.tabs[tab.key] = v))}
+              />
+            }
           />
-        }
-      />
+        );
+      })}
       <Row
         label="Blue selected tab"
         description="Color the selected tab's text and icon accent blue instead of underlining it in orange."
@@ -319,7 +348,8 @@ function LayoutGroup({ settings, update }: GroupProps) {
 function SidebarGroup({ settings, update }: GroupProps) {
   return (
     <Group
-      title="Pull Request Sidebar"
+      collapsible
+      title="Hide PR Sidebar Sections"
       description="Turn a section off to hide it on PR & issue pages."
     >
       {SIDEBAR_SECTIONS.map((section) => {
@@ -378,11 +408,13 @@ function App() {
       {settings && (
         <>
           <AppearanceGroup settings={settings} update={update} />
-          <NavigationGroup settings={settings} update={update} />
           <DatesGroup settings={settings} update={update} />
           <LayoutGroup settings={settings} update={update} />
-          <SidebarGroup settings={settings} update={update} />
           <CommentsGroup settings={settings} update={update} />
+          {/* The two per-item lists sit together, collapsed, so they don't
+              bury the switches above them. */}
+          <NavigationGroup settings={settings} update={update} />
+          <SidebarGroup settings={settings} update={update} />
         </>
       )}
     </div>

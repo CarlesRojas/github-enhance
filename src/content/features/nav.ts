@@ -1,9 +1,11 @@
 // Feature 6: repository tab bar tweaks.
 //
-//   • myPullRequests: add a "My PRs" tab next to the repository's "Pull
-//     requests" tab, pointing at the same page pre-filtered to your own open
-//     pull requests.
-//   • accentSelectedTab — drop the selected tab's orange underline and color
+//   • tabs: one visibility switch per tab in the bar (Code, Issues, Actions
+//     and the rest). Ours, "My PRs", is one of them: turning it off doesn't
+//     hide the tab, it stops it being added at all.
+//   • My PRs: a tab next to the repository's "Pull requests" one, pointing at
+//     the same page pre-filtered to your own open pull requests.
+//   • accentSelectedTab: drop the selected tab's orange underline and color
 //     its label + icon accent blue instead (pure CSS, see content.css).
 //
 // The new tab is a clone of the "Pull requests" one, so it inherits GitHub's
@@ -24,7 +26,15 @@
 // and the current URL both change under us), and orphans left behind by a
 // re-render are dropped.
 
-import { Settings } from '../../shared/settings';
+import {
+  MY_PRS_TAB,
+  REPO_TABS,
+  RepoTabDef,
+  Settings,
+  loadRepoTabs,
+  mergeRepoTabs,
+  saveRepoTabs,
+} from '../../shared/settings';
 
 /** Marks the element we inserted (the <li>, or the anchor if there is none). */
 const MARK = 'data-ghe-my-prs';
@@ -32,16 +42,101 @@ const MARK = 'data-ghe-my-prs';
 const CLONE_TAB = 'ghe-my-prs';
 /** Holds GitHub's own selected state while our tab wears it. */
 const STASH = 'data-ghe-selected';
+/** Marks a tab we hid, so we only ever un-hide our own doing. */
+const HIDDEN = 'data-ghe-tab-hidden';
 /** Drives the selected-tab accent styling in content.css. */
 const ACCENT_ATTR = 'data-ghe-tab-accent';
 const LABEL = 'My PRs';
 const FILTER = 'is:pr is:open author:@me';
+/** The tabs we can name without having seen the page; discovery adds the rest. */
+const KNOWN_KEYS = new Set(REPO_TABS.map((t) => t.key));
 
 /** GitHub's own tabs, in both the underline nav and the narrow-width menu. */
 function prTabs(): HTMLAnchorElement[] {
   return Array.from(
     document.querySelectorAll<HTMLAnchorElement>('a[data-tab-item="pull-requests"]'),
   );
+}
+
+/** Every tab in the bar, GitHub's and ours, in both the nav and the menu. */
+function allTabs(): HTMLAnchorElement[] {
+  return Array.from(document.querySelectorAll<HTMLAnchorElement>('a[data-tab-item]'));
+}
+
+/**
+ * A tab's settings key. GitHub has used both `data-tab-item="code"` and
+ * `data-tab-item="i0code-tab"`, so the value is normalized down to the bare
+ * name. Null for an anchor carrying no tab id at all.
+ */
+function tabKey(tab: HTMLAnchorElement): string | null {
+  const raw = tab.getAttribute('data-tab-item') ?? '';
+  if (raw === CLONE_TAB) return MY_PRS_TAB;
+  return raw.replace(/^i\d+/, '').replace(/-tab$/, '').toLowerCase() || null;
+}
+
+/** What GitHub calls the tab, for the switch in the popup. */
+function tabLabel(tab: HTMLAnchorElement, key: string): string {
+  const text = labelSpan(tab)?.textContent?.trim();
+  if (text) return text;
+  const aria = tab.getAttribute('aria-label')?.trim();
+  if (aria) return aria;
+  return key.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+}
+
+/**
+ * The repository tab bar itself. Found through a tab we know rather than by
+ * selector, so it doesn't matter what GitHub wraps the bar in this month.
+ */
+function tabBar(): HTMLElement | null {
+  for (const tab of allTabs()) {
+    const key = tabKey(tab);
+    if (!key || (!KNOWN_KEYS.has(key) && key !== MY_PRS_TAB)) continue;
+    const nav = tab.closest('nav');
+    if (nav) return nav;
+  }
+  return null;
+}
+
+/**
+ * The tabs GitHub is rendering right now, ours included. Only the bar itself
+ * is read: `data-tab-item` is used elsewhere on GitHub (the tabs on a pull
+ * request, for one) and those aren't repository tabs.
+ */
+function presentTabs(): RepoTabDef[] {
+  const bar = tabBar();
+  if (!bar) return [];
+
+  const tabs: RepoTabDef[] = [];
+  const seen = new Set<string>();
+  for (const tab of bar.querySelectorAll<HTMLAnchorElement>('a[data-tab-item]')) {
+    const key = tabKey(tab);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    tabs.push({ key, label: tabLabel(tab, key) });
+  }
+  return tabs;
+}
+
+/** The last list we wrote, so an unchanged bar costs nothing per pass. */
+let published = '';
+
+/**
+ * Publish the bar for the popup to build its switches from. GitHub adds and
+ * renames tabs on its own schedule, so the switches follow the page rather
+ * than a list baked in here.
+ */
+function publishTabs(): void {
+  const tabs = presentTabs();
+  if (!tabs.length) return;
+
+  const json = JSON.stringify(tabs);
+  if (json === published) return;
+  published = json;
+
+  void loadRepoTabs().then((stored) => {
+    const merged = mergeRepoTabs(stored, tabs);
+    if (JSON.stringify(merged) !== JSON.stringify(stored)) void saveRepoTabs(merged);
+  });
 }
 
 /** Every tab we inserted, wherever it currently sits. */
@@ -253,11 +348,40 @@ function restore(): void {
   for (const tab of prTabs()) releaseMarks(tab);
 }
 
+/**
+ * Hide the tabs that are switched off and show the ones that aren't. Only tabs
+ * we hid are ever shown again, so a tab GitHub itself keeps out of view (the
+ * ones the narrow-width menu holds) stays that way.
+ */
+function applyVisibility(settings: Settings): void {
+  for (const tab of allTabs()) {
+    const key = tabKey(tab);
+    const target = host(tab);
+    // Only an explicit "off" hides a tab, and the popup only ever writes keys
+    // it discovered in the bar, so a `data-tab-item` used elsewhere on the
+    // page (the tabs on a pull request, for one) is never touched.
+    const hide = key !== null && settings.nav.tabs[key] === false;
+
+    if (hide) {
+      target.setAttribute(HIDDEN, '');
+      target.style.setProperty('display', 'none', 'important');
+    } else if (target.hasAttribute(HIDDEN)) {
+      target.removeAttribute(HIDDEN);
+      target.style.removeProperty('display');
+    }
+  }
+}
+
 export function applyNav(settings: Settings): void {
-  // Styling only — the attribute is all content.css needs, so there is nothing
+  // Styling only: the attribute is all content.css needs, so there is nothing
   // to reconcile per tab and it survives GitHub's re-renders for free.
   document.documentElement.toggleAttribute(ACCENT_ATTR, settings.nav.accentSelectedTab);
 
-  if (settings.nav.myPullRequests) apply();
-  else restore();
+  // Off means "never added" rather than "added, then hidden": an inert tab in
+  // the DOM would still take its turn in the keyboard order.
+  if (settings.nav.tabs[MY_PRS_TAB] === false) restore();
+  else apply();
+
+  applyVisibility(settings);
+  publishTabs();
 }

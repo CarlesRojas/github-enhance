@@ -5,12 +5,33 @@ export function Group(props: {
   title: string;
   description?: string;
   children: ReactNode;
+  /**
+   * Render the group as a disclosure, closed until the title is clicked. For
+   * the long per-item lists, which would otherwise bury everything else. The
+   * popup is mounted fresh each time it opens, so it always starts closed.
+   */
+  collapsible?: boolean;
 }) {
+  const body = (
+    <>
+      {props.description && <p className="group-desc">{props.description}</p>}
+      {props.children}
+    </>
+  );
+
+  if (props.collapsible) {
+    return (
+      <details className="group collapsible">
+        <summary className="group-title">{props.title}</summary>
+        {body}
+      </details>
+    );
+  }
+
   return (
     <section className="group">
       <h2 className="group-title">{props.title}</h2>
-      {props.description && <p className="group-desc">{props.description}</p>}
-      {props.children}
+      {body}
     </section>
   );
 }
