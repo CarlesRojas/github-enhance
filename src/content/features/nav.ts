@@ -75,15 +75,33 @@ function filtered(href: string): string {
 }
 
 /**
- * True while the page being viewed is the list our tab opens: the same path,
- * searched for your own PRs. Matched on `author:@me` alone rather than the
- * whole query, so narrowing the filter on the page (adding a label, dropping
- * `is:open`) keeps the tab highlighted.
+ * True while the page being viewed is a list of your own pull requests in this
+ * repository. Two URL shapes qualify, both under GitHub's /pulls path:
+ *
+ *   /owner/repo/pulls?q=is:pr+is:open+author:@me   what our tab links to
+ *   /owner/repo/pulls/@me                          GitHub's own shortcut
+ *
+ * The query is matched on `author:@me` alone rather than as a whole, so
+ * narrowing the filter on the page (adding a label, dropping `is:open`) keeps
+ * the tab highlighted. `review-requested:@me` and friends don't count: those
+ * are somebody else's pull requests.
  */
 function showsOurList(href: string): boolean {
-  const url = new URL(href, location.origin);
-  if (url.pathname !== location.pathname) return false;
-  const q = new URLSearchParams(location.search).get('q') ?? '';
+  const base = new URL(href, location.origin).pathname; // /owner/repo/pulls
+  const path = location.pathname;
+  if (path !== base && !path.startsWith(`${base}/`)) return false;
+
+  if (path.slice(base.length).replace(/\/+$/, '') === '/@me') return true;
+
+  const raw = new URLSearchParams(location.search).get('q') ?? '';
+  // GitHub round-trips the query through the search box, which can leave the
+  // `@` percent-encoded even inside the decoded parameter.
+  let q = raw;
+  try {
+    q = decodeURIComponent(raw);
+  } catch {
+    /* malformed escape: match against the raw value instead */
+  }
   return q.toLowerCase().includes('author:@me');
 }
 

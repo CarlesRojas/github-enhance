@@ -75,8 +75,10 @@ link, label and count.
 - The tab is a clone of the **Pull requests** one, so it inherits its icon,
   styling and Turbo behaviour; it drops the repo-wide open-PR counter, which
   doesn't describe what the tab opens.
-- While the page you're on *is* that filtered list (any `/pulls` URL whose
-  query includes `author:@me`), the selected highlight moves to **My PRs**.
+- While the page you're on *is* a list of your own PRs, the selected highlight
+  moves to **My PRs**. Both URL shapes count: the `?q=…author:@me` one the tab
+  links to, and GitHub's own `/pulls/@me` shortcut. `review-requested:@me` and
+  friends don't, since those are somebody else's PRs.
   GitHub highlights **Pull requests** on every `/pulls` URL, ours included, so
   the state is taken off its tab, stashed there, and handed straight back when
   the filter no longer matches or the option is turned off.
