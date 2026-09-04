@@ -4,7 +4,6 @@ import './popup.css';
 import {
   DATE_FORMATS,
   DEFAULT_SETTINGS,
-  MY_PRS_TAB,
   PAGE_WIDTH_DEFAULT,
   PAGE_WIDTH_MAX,
   REPO_TABS,
@@ -114,11 +113,10 @@ function NavigationGroup({ settings, update }: GroupProps) {
     >
       {tabs.map((tab) => {
         const visible = settings.nav.tabs[tab.key] ?? true;
-        const ours = tab.key === MY_PRS_TAB;
         return (
           <Row
             key={tab.key}
-            label={ours ? `${tab.label} (added)` : tab.label}
+            label={tab.label}
             description={visible ? 'Shown' : 'Hidden'}
             control={
               <Toggle
