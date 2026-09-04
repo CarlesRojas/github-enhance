@@ -109,7 +109,7 @@ function NavigationGroup({ settings, update }: GroupProps) {
   return (
     <Group
       collapsible
-      title="Repository Tabs"
+      title="Hide Repository Tabs"
       description="Turn a tab off to hide it from the bar at the top of every repository. “My PRs” is added by this extension, next to “Pull requests”, and opens the same page filtered to your own open PRs."
     >
       {tabs.map((tab) => {
@@ -351,7 +351,7 @@ function SidebarGroup({ settings, update }: GroupProps) {
   return (
     <Group
       collapsible
-      title="Pull Request Sidebar"
+      title="Hide PR Sidebar Sections"
       description="Turn a section off to hide it on PR & issue pages."
     >
       {SIDEBAR_SECTIONS.map((section) => {
