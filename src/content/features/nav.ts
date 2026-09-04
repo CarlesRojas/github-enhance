@@ -26,7 +26,15 @@
 // and the current URL both change under us), and orphans left behind by a
 // re-render are dropped.
 
-import { MY_PRS_TAB, REPO_TABS, Settings } from '../../shared/settings';
+import {
+  MY_PRS_TAB,
+  REPO_TABS,
+  RepoTabDef,
+  Settings,
+  loadRepoTabs,
+  mergeRepoTabs,
+  saveRepoTabs,
+} from '../../shared/settings';
 
 /** Marks the element we inserted (the <li>, or the anchor if there is none). */
 const MARK = 'data-ghe-my-prs';
@@ -40,7 +48,7 @@ const HIDDEN = 'data-ghe-tab-hidden';
 const ACCENT_ATTR = 'data-ghe-tab-accent';
 const LABEL = 'My PRs';
 const FILTER = 'is:pr is:open author:@me';
-/** Tabs we have a switch for; anything else in the bar is left alone. */
+/** The tabs we can name without having seen the page; discovery adds the rest. */
 const KNOWN_KEYS = new Set(REPO_TABS.map((t) => t.key));
 
 /** GitHub's own tabs, in both the underline nav and the narrow-width menu. */
@@ -56,15 +64,79 @@ function allTabs(): HTMLAnchorElement[] {
 }
 
 /**
- * A tab's settings key, or null for markup we don't recognise. GitHub has used
- * both `data-tab-item="code"` and `data-tab-item="i0code-tab"`, so the value is
- * normalized down to the bare name.
+ * A tab's settings key. GitHub has used both `data-tab-item="code"` and
+ * `data-tab-item="i0code-tab"`, so the value is normalized down to the bare
+ * name. Null for an anchor carrying no tab id at all.
  */
 function tabKey(tab: HTMLAnchorElement): string | null {
   const raw = tab.getAttribute('data-tab-item') ?? '';
   if (raw === CLONE_TAB) return MY_PRS_TAB;
-  const key = raw.replace(/^i\d+/, '').replace(/-tab$/, '').toLowerCase();
-  return KNOWN_KEYS.has(key) ? key : null;
+  return raw.replace(/^i\d+/, '').replace(/-tab$/, '').toLowerCase() || null;
+}
+
+/** What GitHub calls the tab, for the switch in the popup. */
+function tabLabel(tab: HTMLAnchorElement, key: string): string {
+  const text = labelSpan(tab)?.textContent?.trim();
+  if (text) return text;
+  const aria = tab.getAttribute('aria-label')?.trim();
+  if (aria) return aria;
+  return key.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+}
+
+/**
+ * The repository tab bar itself. Found through a tab we know rather than by
+ * selector, so it doesn't matter what GitHub wraps the bar in this month.
+ */
+function tabBar(): HTMLElement | null {
+  for (const tab of allTabs()) {
+    const key = tabKey(tab);
+    if (!key || (!KNOWN_KEYS.has(key) && key !== MY_PRS_TAB)) continue;
+    const nav = tab.closest('nav');
+    if (nav) return nav;
+  }
+  return null;
+}
+
+/**
+ * The tabs GitHub is rendering right now, ours included. Only the bar itself
+ * is read: `data-tab-item` is used elsewhere on GitHub (the tabs on a pull
+ * request, for one) and those aren't repository tabs.
+ */
+function presentTabs(): RepoTabDef[] {
+  const bar = tabBar();
+  if (!bar) return [];
+
+  const tabs: RepoTabDef[] = [];
+  const seen = new Set<string>();
+  for (const tab of bar.querySelectorAll<HTMLAnchorElement>('a[data-tab-item]')) {
+    const key = tabKey(tab);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    tabs.push({ key, label: tabLabel(tab, key) });
+  }
+  return tabs;
+}
+
+/** The last list we wrote, so an unchanged bar costs nothing per pass. */
+let published = '';
+
+/**
+ * Publish the bar for the popup to build its switches from. GitHub adds and
+ * renames tabs on its own schedule, so the switches follow the page rather
+ * than a list baked in here.
+ */
+function publishTabs(): void {
+  const tabs = presentTabs();
+  if (!tabs.length) return;
+
+  const json = JSON.stringify(tabs);
+  if (json === published) return;
+  published = json;
+
+  void loadRepoTabs().then((stored) => {
+    const merged = mergeRepoTabs(stored, tabs);
+    if (JSON.stringify(merged) !== JSON.stringify(stored)) void saveRepoTabs(merged);
+  });
 }
 
 /** Every tab we inserted, wherever it currently sits. */
@@ -284,9 +356,11 @@ function restore(): void {
 function applyVisibility(settings: Settings): void {
   for (const tab of allTabs()) {
     const key = tabKey(tab);
-    if (!key) continue;
     const target = host(tab);
-    const hide = settings.nav.tabs[key] === false;
+    // Only an explicit "off" hides a tab, and the popup only ever writes keys
+    // it discovered in the bar, so a `data-tab-item` used elsewhere on the
+    // page (the tabs on a pull request, for one) is never touched.
+    const hide = key !== null && settings.nav.tabs[key] === false;
 
     if (hide) {
       target.setAttribute(HIDDEN, '');
@@ -309,4 +383,5 @@ export function applyNav(settings: Settings): void {
   else apply();
 
   applyVisibility(settings);
+  publishTabs();
 }

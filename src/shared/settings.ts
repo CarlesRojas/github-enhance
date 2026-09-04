@@ -115,6 +115,40 @@ export const REPO_TABS: RepoTabDef[] = [
 /** Our own tab's key in `nav.tabs`; also decides whether it is added at all. */
 export const MY_PRS_TAB = 'my-prs';
 
+/**
+ * The tab bar as the content script last saw it: GitHub's own keys and labels,
+ * in the order they are rendered. REPO_TABS is only the starting point, since
+ * GitHub adds, renames and reshuffles tabs (Agents, "Security & quality") on
+ * its own schedule. Kept in `chrome.storage.local`: it is a cache of what the
+ * page looks like, not a preference to sync across machines.
+ */
+const REPO_TABS_KEY = 'repoTabs';
+
+function isTabDef(value: unknown): value is RepoTabDef {
+  const t = value as RepoTabDef | null;
+  return !!t && typeof t.key === 'string' && !!t.key && typeof t.label === 'string';
+}
+
+export async function loadRepoTabs(): Promise<RepoTabDef[]> {
+  const data = await chrome.storage.local.get(REPO_TABS_KEY);
+  const stored: unknown = data[REPO_TABS_KEY];
+  return Array.isArray(stored) ? stored.filter(isTabDef) : [];
+}
+
+export async function saveRepoTabs(tabs: RepoTabDef[]): Promise<void> {
+  await chrome.storage.local.set({ [REPO_TABS_KEY]: tabs });
+}
+
+/**
+ * The tabs just seen, followed by any we knew about that this repository
+ * doesn't have: hiding Wiki on one repository shouldn't drop its switch while
+ * you browse another that has no wiki.
+ */
+export function mergeRepoTabs(stored: RepoTabDef[], seen: RepoTabDef[]): RepoTabDef[] {
+  const keys = new Set(seen.map((t) => t.key));
+  return [...seen, ...stored.filter((t) => !keys.has(t.key))];
+}
+
 export interface Settings {
   dates: {
     enabled: boolean;

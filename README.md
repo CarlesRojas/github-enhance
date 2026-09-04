@@ -65,17 +65,25 @@ Hide sidebar sections you don’t use on PR/issue pages.
 
 Controls for the tab bar at the top of every repository.
 
-**Show or hide any tab.** Each tab in the bar has its own switch: Code, Issues,
-Pull requests, My PRs, Discussions, Actions, Projects, Wiki, Security, Insights
-and Settings.
+**Show or hide any tab.** Every tab in the bar gets its own switch, and the
+list is read off the page rather than baked into the extension: whatever GitHub
+renders today (Code, Issues, Pull requests, My PRs, Agents, Actions, Projects,
+Wiki, Security & quality, Insights, Settings) is what the popup lists, under
+GitHub's own labels.
 
-- A hidden tab is hidden in both places the bar renders it: the underline nav
-  and the menu it spills into at narrow widths.
-- Tabs are matched on GitHub's own `data-tab-item`, normalized so both the
+- The content script publishes the bar it sees to `chrome.storage.local`, and
+  the popup builds its switches from that, so a tab GitHub adds or renames
+  shows up without an extension update. A short built-in list stands in until
+  a repository page has been visited.
+- Tabs are keyed on GitHub's own `data-tab-item`, normalized so both the
   current (`code`) and older (`i0code-tab`) markup resolve to the same switch.
-  A tab we have no switch for is left alone.
-- Only tabs we hid are ever shown again, so nothing GitHub itself keeps out of
-  view gets forced back on screen.
+  Only the bar itself is read: `data-tab-item` is used elsewhere on GitHub, and
+  those aren't repository tabs.
+- Switches you had set are kept even on a repository that doesn't have that
+  tab, so hiding the wiki on one repo doesn't drop the switch on the next.
+- A hidden tab is hidden in both places the bar renders it: the underline nav
+  and the menu it spills into at narrow widths. Only tabs we hid are ever shown
+  again, so nothing GitHub itself keeps out of view gets forced back on screen.
 
 **My PRs** adds a **My PRs** tab right after a repository's **Pull requests**
 tab, pointing at the same page filtered to your own open PRs

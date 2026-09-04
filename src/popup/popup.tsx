@@ -8,11 +8,13 @@ import {
   PAGE_WIDTH_DEFAULT,
   PAGE_WIDTH_MAX,
   REPO_TABS,
+  RepoTabDef,
   SIDEBAR_PCT_MAX,
   SIDEBAR_PCT_MIN,
   SIDEBAR_SECTIONS,
   Settings,
   TIME_FORMATS,
+  loadRepoTabs,
   loadSettings,
   resolveDatePattern,
   saveSettings,
@@ -39,6 +41,23 @@ function useSettings() {
   }
 
   return { settings, update };
+}
+
+/**
+ * The repository tab bar as the content script last saw it, so the switches
+ * cover whatever GitHub renders today (Agents, "Security & quality", anything
+ * added next). REPO_TABS stands in until a GitHub page has been visited.
+ */
+function useRepoTabs(): RepoTabDef[] {
+  const [tabs, setTabs] = useState<RepoTabDef[]>(REPO_TABS);
+
+  useEffect(() => {
+    loadRepoTabs().then((stored) => {
+      if (stored.length) setTabs(stored);
+    });
+  }, []);
+
+  return tabs;
 }
 
 function Logo() {
@@ -85,13 +104,15 @@ function AppearanceGroup({ settings, update }: GroupProps) {
 }
 
 function NavigationGroup({ settings, update }: GroupProps) {
+  const tabs = useRepoTabs();
+
   return (
     <Group
       collapsible
       title="Repository Tabs"
       description="Turn a tab off to hide it from the bar at the top of every repository. “My PRs” is added by this extension, next to “Pull requests”, and opens the same page filtered to your own open PRs."
     >
-      {REPO_TABS.map((tab) => {
+      {tabs.map((tab) => {
         const visible = settings.nav.tabs[tab.key] ?? true;
         const ours = tab.key === MY_PRS_TAB;
         return (
