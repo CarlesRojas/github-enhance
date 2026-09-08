@@ -78,6 +78,7 @@ async function init(): Promise<void> {
 
   onSettingsChanged((settings) => {
     current = settings;
+    if (!settings.layout.pauseWhileResizing) setResizing(false);
     applyAll(settings);
   });
 
@@ -136,7 +137,7 @@ async function init(): Promise<void> {
   // all features per frame made resizing crawl.
   let resizeTimer = 0;
   window.addEventListener('resize', () => {
-    setResizing(true);
+    if (current?.layout.pauseWhileResizing) setResizing(true);
     clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => {
       setResizing(false);
