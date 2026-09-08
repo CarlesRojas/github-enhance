@@ -16,6 +16,7 @@ import {
 import { applyNav } from './features/nav';
 import { applyNotices } from './features/notices';
 import { applyRedesign } from './features/redesign';
+import { isResizing, setResizing } from './util';
 
 let current: Settings | null = null;
 let scheduled = false;
@@ -56,6 +57,9 @@ function applyAll(settings: Settings): void {
 
 function schedule(): void {
   if (scheduled || !current) return;
+  // Mutations that land mid-resize are GitHub's responsive re-renders; the
+  // one pass scheduled when the resize settles picks up whatever they did.
+  if (isResizing()) return;
   scheduled = true;
   requestAnimationFrame(() => {
     scheduled = false;
@@ -126,11 +130,18 @@ async function init(): Promise<void> {
   document.addEventListener('turbo:before-cache', () => run('layout-reset', resetLayout));
 
   // The checks box hops between the timeline top and the sidebar by width, so
-  // re-evaluate when the window is resized (debounced).
+  // re-evaluate once the window has stopped resizing. While the drag is in
+  // flight every mutation-driven pass is suspended (see setResizing): GitHub
+  // re-renders its responsive layout on every frame of the drag, and running
+  // all features per frame made resizing crawl.
   let resizeTimer = 0;
   window.addEventListener('resize', () => {
+    setResizing(true);
     clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(() => schedule(), 150);
+    resizeTimer = window.setTimeout(() => {
+      setResizing(false);
+      schedule();
+    }, 150);
   });
 
   // Safety-net poll. GitHub's React re-renders can drop the relocated checks
@@ -143,7 +154,7 @@ async function init(): Promise<void> {
   window.setInterval(() => {
     // Paused mid-navigation: the old view is being torn down and moving the
     // box back into it would recreate the very orphaning this poll heals.
-    if (!current || navigating) return;
+    if (!current || navigating || isResizing()) return;
     if (checksMisplaced(current)) {
       if (!loggedMisplaced) {
         console.debug('[github-enhance] checks not in sidebar — reconciling');
