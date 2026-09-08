@@ -51,3 +51,19 @@ export function findByText<T extends Element>(
   }
   return null;
 }
+
+// Window-resize gate. While the user drags the window edge, GitHub's React
+// re-renders its responsive layout every frame, and each of those DOM
+// mutations would otherwise trigger a full feature pass (document-wide scans,
+// style reads, layout measurements) on every frame — the drag turns to
+// treacle. Mutation-driven work checks this flag and stands down; the content
+// script runs one reconcile once the resize settles.
+let resizing = false;
+
+export function isResizing(): boolean {
+  return resizing;
+}
+
+export function setResizing(on: boolean): void {
+  resizing = on;
+}

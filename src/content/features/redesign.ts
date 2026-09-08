@@ -19,7 +19,7 @@
 // can miss — so a dedicated attribute observer re-syncs on those too.
 
 import { Settings } from '../../shared/settings';
-import { isPRPage, normText } from '../util';
+import { isPRPage, isResizing, normText } from '../util';
 
 const ATTR = 'data-ghe-redesign';
 const DRAFT_HIDDEN = 'data-ghe-draft-hidden';
@@ -434,7 +434,9 @@ let syncObserver: MutationObserver | null = null;
 let syncQueued = false;
 
 function syncSoon(): void {
-  if (syncQueued) return;
+  // Style/class churn from GitHub's responsive re-renders mid-resize; the
+  // reconcile that runs when the resize settles re-applies the proxies.
+  if (syncQueued || isResizing()) return;
   syncQueued = true;
   requestAnimationFrame(() => {
     syncQueued = false;
