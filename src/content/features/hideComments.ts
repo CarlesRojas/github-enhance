@@ -205,10 +205,49 @@ function activate(control: HTMLFormElement | HTMLElement): void {
 }
 
 /**
- * Unhide a minimized comment. GitHub ships the unminimize form inside the
- * "…" kebab menu, whose content is deferred-loaded — if neither the form nor
- * an "Unhide" item is in the DOM yet, opening the menu makes GitHub fetch
- * it. The menu is closed again afterwards whatever happens.
+ * GitHub defers the kebab menu's content: <details-menu src="…"> pulls the
+ * items (unminimize form included) only once the menu opens — and which menu
+ * it serves depends on the URL's `minimized` flag. Fetch that fragment
+ * ourselves, with the flag forced on, and lift the unminimize form out of it.
+ */
+async function fetchUnminimizeForm(scope: Element): Promise<HTMLFormElement | null> {
+  const urls: string[] = [];
+  for (const el of scope.querySelectorAll('details-menu[src], include-fragment[src]')) {
+    const src = el.getAttribute('src');
+    if (!src) continue;
+    let forced = src;
+    try {
+      const u = new URL(src, location.href);
+      u.searchParams.set('minimized', '1');
+      forced = u.pathname + u.search;
+    } catch {
+      /* keep src as is */
+    }
+    for (const url of [forced, src]) if (!urls.includes(url)) urls.push(url);
+  }
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+        headers: { Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      if (!res.ok) continue;
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+      const form = doc.querySelector<HTMLFormElement>(UNMINIMIZE_FORM);
+      if (form) return document.importNode(form, true);
+    } catch (err) {
+      console.debug('[github-enhance] menu fetch failed', url, err);
+    }
+  }
+  return null;
+}
+
+/**
+ * Unhide a minimized comment by submitting GitHub's unminimize form. Looked
+ * for in the DOM first; otherwise fetched from the kebab menu's source URL
+ * and mounted (hidden) inside the comment so GitHub's own submit handling
+ * runs on it. Only if both fail is the kebab menu opened as a last resort,
+ * and it is closed again afterwards whatever happens.
  */
 async function unhideComment(scope: Element, btn: HTMLButtonElement): Promise<void> {
   const original = btn.textContent;
@@ -216,7 +255,18 @@ async function unhideComment(scope: Element, btn: HTMLButtonElement): Promise<vo
   btn.textContent = 'Unhiding…';
   let trigger: HTMLElement | null = null;
   try {
-    let control = findUnhideControl(scope);
+    let control: HTMLElement | null = findUnhideControl(scope);
+    if (!control) {
+      const form = await fetchUnminimizeForm(scope);
+      if (form) {
+        const host = document.createElement('div');
+        host.hidden = true;
+        host.className = 'ghe-unminimize-host';
+        host.appendChild(form);
+        (btn.closest('.timeline-comment-actions') ?? scope).appendChild(host);
+        control = form;
+      }
+    }
     if (!control) {
       // Prefer the kebab next to our button; fall back to any in the comment.
       const actions =
