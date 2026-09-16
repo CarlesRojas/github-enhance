@@ -289,6 +289,17 @@ function LayoutGroup({ settings, update }: GroupProps) {
         }
       />
       <Row
+        label="Pause while resizing"
+        description="Skip page updates while the window is being resized, then catch up once it settles. Keeps resizing smooth."
+        control={
+          <Toggle
+            checked={l.pauseWhileResizing}
+            label="Pause while resizing"
+            onChange={(v) => update((s) => (s.layout.pauseWhileResizing = v))}
+          />
+        }
+      />
+      <Row
         label="Page width"
         description="Max width of the page content."
         control={

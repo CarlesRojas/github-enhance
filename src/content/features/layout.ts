@@ -360,9 +360,9 @@ function sidebarIsColumn(): boolean {
 
 type ChecksPlacement = 'off' | 'top' | 'sidebar';
 
-function checksPlacement(settings: Settings): ChecksPlacement {
+function checksPlacement(settings: Settings, column = sidebarIsColumn()): ChecksPlacement {
   if (!settings.layout.checksTop) return 'off';
-  return sidebarIsColumn() ? 'sidebar' : 'top';
+  return column ? 'sidebar' : 'top';
 }
 
 /**
@@ -422,15 +422,18 @@ export function applyLayout(settings: Settings): void {
   // independent of whether the checks box is moved into it — the width slider
   // controls the sidebar size on its own. Re-evaluated on every pass (incl.
   // resize), so it turns off when the sidebar stacks at narrow widths.
-  setWideSidebar(isPRPage() && sidebarIsColumn());
+  // Measured once per pass: each call forces layout (getBoundingClientRect).
+  const onPR = isPRPage();
+  const column = sidebarIsColumn();
+  setWideSidebar(onPR && column);
   // Sticky sidebar only makes sense while it's a column; behind its own toggle.
-  const sticky = settings.layout.stickySidebar && isPRPage() && sidebarIsColumn();
+  const sticky = settings.layout.stickySidebar && onPR && column;
   stickyOn = sticky;
   setStickySidebar(sticky);
   if (sticky) hookStickyScroll();
   publishStickyTop();
 
-  const checks = checksPlacement(settings);
+  const checks = checksPlacement(settings, column);
   const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';
   const sig = `${checks}:${compose}`;
   const current = discussion.getAttribute(SIG) ?? 'off:off';
