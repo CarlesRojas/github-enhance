@@ -60,56 +60,99 @@ function submitInlineForm(comment: Element): boolean {
   return true;
 }
 
-async function hideViaMenu(comment: Element): Promise<boolean> {
-  const details = comment.querySelector<HTMLDetailsElement>(
-    '.timeline-comment-actions details, .timeline-comment-header details',
+/** Close a kebab menu we opened programmatically so it doesn't linger. */
+function closeMenu(trigger: HTMLElement | null): void {
+  if (!trigger) return;
+  if (trigger instanceof HTMLDetailsElement) {
+    trigger.removeAttribute('open');
+    return;
+  }
+  // Primer <action-menu>: a button with popovertarget / aria-controls.
+  const id = trigger.getAttribute('popovertarget') || trigger.getAttribute('aria-controls');
+  const popover = id ? document.getElementById(id) : null;
+  try {
+    (popover as HTMLElement & { hidePopover?: () => void })?.hidePopover?.();
+  } catch {
+    /* not a popover */
+  }
+  if (trigger.getAttribute('aria-expanded') === 'true') trigger.click();
+}
+
+/**
+ * Open the "…" kebab menu of a comment's action bar and return the element
+ * that toggles it (the <details>, or the <button> of an <action-menu>) so the
+ * caller can close it again. Returns null when no menu is found.
+ */
+function openMenu(actions: Element): HTMLElement | null {
+  const details = actions.querySelector<HTMLDetailsElement>('details');
+  if (details) {
+    if (!details.open) details.querySelector<HTMLElement>('summary')?.click();
+    return details;
+  }
+  const button = actions.querySelector<HTMLElement>(
+    'button[popovertarget], button[aria-haspopup="true"], button[aria-haspopup="menu"]',
   );
-  const summary = details?.querySelector<HTMLElement>('summary');
-  if (!details || !summary) return false;
+  if (button) {
+    if (button.getAttribute('aria-expanded') !== 'true') button.click();
+    return button;
+  }
+  return null;
+}
 
-  if (!details.open) summary.click();
-
-  const menu = await waitFor(
-    () => details.querySelector('details-menu, .dropdown-menu, .SelectMenu-list'),
-    2000,
+/** Find a menu item / button whose label matches `labels` (exact or prefix). */
+function findMenuItem(root: ParentNode, labels: string[]): HTMLElement | null {
+  const items = root.querySelectorAll<HTMLElement>(
+    'button, a, [role="menuitem"], [role="menuitemradio"]',
   );
-  if (!menu) return false;
-
-  // Find the "Hide" item and click it to reveal the reason form.
-  const hideItem = Array.from(
-    menu.querySelectorAll<HTMLElement>('button, a, [role="menuitem"]'),
-  ).find((el) => {
+  for (const el of items) {
     const t = normText(el);
-    return t === 'hide' || t.startsWith('hide ');
-  });
-  if (!hideItem) return false;
-  hideItem.click();
+    if (labels.some((l) => t === l || t.startsWith(l + ' '))) return el;
+  }
+  return null;
+}
 
-  // The inline form should now exist somewhere in the comment.
-  const form = await waitFor(
-    () =>
-      comment.querySelector<HTMLFormElement>(
-        'form.js-comment-minimize, form[action*="minimize"]',
-      ),
-    2000,
+async function hideViaMenu(comment: Element): Promise<boolean> {
+  const actions = comment.querySelector(
+    '.timeline-comment-actions, .timeline-comment-header',
   );
-  if (form && submitInlineForm(comment)) return true;
+  if (!actions) return false;
+  const trigger = openMenu(actions);
+  if (!trigger) return false;
 
-  // Otherwise pick the reason from a select that just appeared and submit.
-  const select = await waitFor(
-    () =>
-      comment.querySelector<HTMLSelectElement>(
-        'select[name="classifier"], select.js-comment-minimize-reasons',
-      ),
-    2000,
-  );
-  if (!select) return false;
-  pickOutdatedOption(select);
-  const submit = select
-    .closest('form')
-    ?.querySelector<HTMLElement>('button[type="submit"], input[type="submit"]');
-  submit?.click();
-  return true;
+  try {
+    // Find the "Hide" item and click it to reveal the reason form.
+    const hideItem = await waitFor(() => findMenuItem(comment, ['hide']), 2000);
+    if (!hideItem) return false;
+    hideItem.click();
+
+    // The inline form should now exist somewhere in the comment.
+    const form = await waitFor(
+      () =>
+        comment.querySelector<HTMLFormElement>(
+          'form.js-comment-minimize, form[action*="minimize"]',
+        ),
+      2000,
+    );
+    if (form && submitInlineForm(comment)) return true;
+
+    // Otherwise pick the reason from a select that just appeared and submit.
+    const select = await waitFor(
+      () =>
+        comment.querySelector<HTMLSelectElement>(
+          'select[name="classifier"], select.js-comment-minimize-reasons',
+        ),
+      2000,
+    );
+    if (!select) return false;
+    pickOutdatedOption(select);
+    const submit = select
+      .closest('form')
+      ?.querySelector<HTMLElement>('button[type="submit"], input[type="submit"]');
+    submit?.click();
+    return true;
+  } finally {
+    closeMenu(trigger);
+  }
 }
 
 async function hideAsOutdated(comment: Element, btn: HTMLButtonElement): Promise<void> {
@@ -128,41 +171,71 @@ async function hideAsOutdated(comment: Element, btn: HTMLButtonElement): Promise
   }
 }
 
+const UNMINIMIZE_FORM =
+  'form.js-comment-unminimize, form[action$="/unminimize"], form[action*="unminimize"]';
+
 /**
- * Unhide a minimized comment by submitting GitHub's unminimize form. The
- * form lives in the "…" kebab menu, whose content is deferred-loaded — if
- * it isn't in the DOM yet, opening the menu makes GitHub fetch it.
+ * The control that unhides a minimized comment: GitHub's unminimize form
+ * when it is in the DOM, otherwise the "Unhide" item of the kebab menu
+ * (whatever element it is rendered as — clicking it performs the action).
+ */
+function findUnhideControl(root: ParentNode): HTMLFormElement | HTMLElement | null {
+  const form = root.querySelector<HTMLFormElement>(UNMINIMIZE_FORM);
+  if (form) return form;
+  return findMenuItem(root, ['unhide']);
+}
+
+function activate(control: HTMLFormElement | HTMLElement): void {
+  if (!(control instanceof HTMLFormElement)) {
+    control.click();
+    return;
+  }
+  // A real click on the submit button goes through GitHub's own handlers
+  // exactly like the user would; requestSubmit is the fallback.
+  const submit = control.querySelector<HTMLButtonElement>(
+    'button[type="submit"], button:not([type]), input[type="submit"]',
+  );
+  if (submit) {
+    submit.click();
+  } else if (typeof control.requestSubmit === 'function') {
+    control.requestSubmit();
+  } else {
+    control.submit();
+  }
+}
+
+/**
+ * Unhide a minimized comment. GitHub ships the unminimize form inside the
+ * "…" kebab menu, whose content is deferred-loaded — if neither the form nor
+ * an "Unhide" item is in the DOM yet, opening the menu makes GitHub fetch
+ * it. The menu is closed again afterwards whatever happens.
  */
 async function unhideComment(scope: Element, btn: HTMLButtonElement): Promise<void> {
   const original = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Unhiding…';
+  let trigger: HTMLElement | null = null;
   try {
-    let form = scope.querySelector<HTMLFormElement>('form.js-comment-unminimize');
-    if (!form) {
-      const details = scope.querySelector<HTMLDetailsElement>(
-        '.timeline-comment-actions details',
-      );
-      if (details && !details.open) details.querySelector('summary')?.click();
-      form = await waitFor(
-        () => scope.querySelector<HTMLFormElement>('form.js-comment-unminimize'),
-        2000,
-      );
-      details?.removeAttribute('open'); // don't leave the menu showing
+    let control = findUnhideControl(scope);
+    if (!control) {
+      // Prefer the kebab next to our button; fall back to any in the comment.
+      const actions =
+        btn.closest('.timeline-comment-actions') ??
+        scope.querySelector('.timeline-comment-actions') ??
+        scope;
+      trigger = openMenu(actions);
+      if (!trigger) throw new Error('no kebab menu found');
+      control = await waitFor(() => findUnhideControl(scope), 3000);
     }
-    if (!form) throw new Error('no unminimize form found');
-
-    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-    if (typeof form.requestSubmit === 'function') {
-      form.requestSubmit(submit ?? undefined);
-    } else {
-      form.submit();
-    }
+    if (!control) throw new Error('no unminimize form or Unhide item found');
+    activate(control);
   } catch (err) {
     console.debug('[github-enhance] unhide failed', err);
     btn.disabled = false;
     btn.textContent = original || 'Unhide';
     btn.title = 'Could not unhide automatically — use the “…” menu instead.';
+  } finally {
+    closeMenu(trigger);
   }
 }
 
