@@ -289,6 +289,17 @@ function LayoutGroup({ settings, update }: GroupProps) {
         }
       />
       <Row
+        label="Back to top button"
+        description="Show a button at the bottom right of pull requests to jump back to the top once you've scrolled down."
+        control={
+          <Toggle
+            checked={l.scrollTopButton}
+            label="Back to top button"
+            onChange={(v) => update((s) => (s.layout.scrollTopButton = v))}
+          />
+        }
+      />
+      <Row
         label="Pause while resizing"
         description="Skip page updates while the window is being resized, then catch up once it settles. Keeps resizing smooth."
         control={
