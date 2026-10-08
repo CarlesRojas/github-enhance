@@ -167,6 +167,7 @@ export interface Settings {
     hideNotices: boolean; // hide the Community Guidelines + ProTip notes
     hideFooter: boolean; // hide GitHub's page footer
     stickySidebar: boolean; // keep the PR sidebar in view while scrolling
+    scrollTopButton: boolean; // "back to top" button on scrolled PR pages
     /**
      * Suspend DOM work while the window is being resized and reconcile once it
      * settles. GitHub re-renders on every frame of a drag, and reacting to each
@@ -212,6 +213,7 @@ export const DEFAULT_SETTINGS: Settings = {
     hideNotices: true,
     hideFooter: true,
     stickySidebar: false,
+    scrollTopButton: true,
     pauseWhileResizing: true,
     sidebarWidthPct: 40,
     pageMaxWidth: 2000,

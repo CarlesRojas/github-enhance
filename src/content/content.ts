@@ -16,6 +16,7 @@ import {
 import { applyNav } from './features/nav';
 import { applyNotices } from './features/notices';
 import { applyRedesign } from './features/redesign';
+import { applyScrollTop } from './features/scrollTop';
 import { isResizing, setResizing } from './util';
 
 let current: Settings | null = null;
@@ -50,6 +51,7 @@ function applyAll(settings: Settings): void {
     run('nav', () => applyNav(settings));
     run('notices', () => applyNotices(settings));
     run('redesign', () => applyRedesign(settings));
+    run('scrollTop', () => applyScrollTop(settings));
   } finally {
     connectObserver();
   }
