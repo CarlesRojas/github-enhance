@@ -15,6 +15,11 @@ import { isPRPage } from '../util';
 const ID = 'ghe-scroll-top';
 /** How far down (px) before the button appears. */
 const THRESHOLD = 400;
+/**
+ * Duration (ms) of the scroll back up. The browser's own `smooth` behaviour
+ * scales with distance and crawls on long diffs; this is fixed.
+ */
+const DURATION = 250;
 
 let enabled = false;
 let listening = false;
@@ -42,11 +47,30 @@ function ensureButton(): HTMLButtonElement {
   btn.innerHTML = ICON;
   btn.addEventListener('click', () => {
     const target = scroller?.isConnected ? scroller : null;
-    if (target) target.scrollTo({ top: 0, behavior: 'smooth' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (target) scrollToTop(target);
+    scrollToTop(window);
   });
   document.body.appendChild(btn);
   return btn;
+}
+
+/** Animate `el` to the top in DURATION ms (instant with reduced motion). */
+function scrollToTop(el: HTMLElement | Window): void {
+  const read = (): number => (el instanceof Window ? el.scrollY : el.scrollTop);
+  const start = read();
+  if (start <= 0) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.scrollTo(0, 0);
+    return;
+  }
+  const t0 = performance.now();
+  const step = (now: number): void => {
+    const t = Math.min((now - t0) / DURATION, 1);
+    const eased = 1 - (1 - t) ** 3; // ease-out cubic
+    el.scrollTo(0, start * (1 - eased));
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 
 function scrolledDown(): boolean {
