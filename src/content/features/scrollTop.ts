@@ -14,7 +14,7 @@ import { isPRPage } from '../util';
 
 const ID = 'ghe-scroll-top';
 /** How far down (px) before the button appears. */
-const THRESHOLD = 400;
+const THRESHOLD = 250;
 /**
  * Duration (ms) of the scroll back up. The browser's own `smooth` behaviour
  * scales with distance and crawls on long diffs; this is fixed.
