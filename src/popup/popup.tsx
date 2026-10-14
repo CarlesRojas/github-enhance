@@ -83,9 +83,10 @@ interface GroupProps {
 }
 
 // ---------------------------------------------------------------------------
-// The popup is split by the page a setting acts on: General (all of GitHub),
-// Repository (the tab bar on every repo page) and Pull requests, which is
-// grouped again by area of the PR page.
+// The popup is split by what a setting does: General (how GitHub looks),
+// Layout (where things go on a pull request, and the buttons we add) and Hide
+// (everything that can be taken off the page). In Hide every switch reads the
+// same way: on means shown, off hides it.
 // ---------------------------------------------------------------------------
 
 /** Settings row for a plain boolean switch. */
@@ -116,6 +117,24 @@ function ToggleRow(props: {
   );
 }
 
+/** A Hide-page row: on shows the thing, off hides it. */
+function ShowRow(props: {
+  label: string;
+  description?: string;
+  visible: boolean;
+  onChange: (visible: boolean) => void;
+}) {
+  return (
+    <ToggleRow
+      label={props.label}
+      name={`Show ${props.label}`}
+      description={props.description ?? (props.visible ? 'Shown' : 'Hidden')}
+      checked={props.visible}
+      onChange={props.onChange}
+    />
+  );
+}
+
 function Experimental({ children }: { children: ReactNode }) {
   return (
     <>
@@ -126,6 +145,27 @@ function Experimental({ children }: { children: ReactNode }) {
 }
 
 // --- General ---------------------------------------------------------------
+
+function AppearanceGroup({ settings, update }: GroupProps) {
+  return (
+    <Group title="Appearance" description="Works with all GitHub themes.">
+      <ToggleRow
+        label="Pull request redesign"
+        name="Pull request redesign"
+        description="Visual overhaul of the pull request page."
+        checked={settings.appearance.redesign}
+        onChange={(v) => update((s) => (s.appearance.redesign = v))}
+      />
+      <ToggleRow
+        label="Blue selected tab"
+        name="Blue selected tab"
+        description="Color the selected tab's text and icon accent blue instead of underlining it in orange."
+        checked={settings.nav.accentSelectedTab}
+        onChange={(v) => update((s) => (s.nav.accentSelectedTab = v))}
+      />
+    </Group>
+  );
+}
 
 function DatesGroup({ settings, update }: GroupProps) {
   const d = settings.dates;
@@ -200,7 +240,7 @@ function PageGroup({ settings, update }: GroupProps) {
     <Group title="Page">
       <Row
         label="Page width"
-        description="Max width of the page content."
+        description="Max width of the pull request page."
         control={
           <Slider
             value={l.pageMaxWidth}
@@ -214,13 +254,6 @@ function PageGroup({ settings, update }: GroupProps) {
         }
       />
       <ToggleRow
-        label="Hide footer"
-        name="Hide footer"
-        description="Hide GitHub's page footer."
-        checked={l.hideFooter}
-        onChange={(v) => update((s) => (s.layout.hideFooter = v))}
-      />
-      <ToggleRow
         label="Pause while resizing"
         name="Pause while resizing"
         description="Skip page updates while the window is being resized, then catch up once it settles. Keeps resizing smooth."
@@ -231,64 +264,7 @@ function PageGroup({ settings, update }: GroupProps) {
   );
 }
 
-// --- Repository ------------------------------------------------------------
-
-function RepoTabsGroup({ settings, update }: GroupProps) {
-  const tabs = useRepoTabs();
-
-  return (
-    <Group
-      title="Tabs"
-      description="Turn a tab off to hide it from the bar at the top of every repository. “My PRs” is added by this extension, next to “Pull requests”, and opens the same page filtered to your own open PRs."
-    >
-      {tabs.map((tab) => {
-        const visible = settings.nav.tabs[tab.key] ?? true;
-        return (
-          <ToggleRow
-            key={tab.key}
-            label={tab.label}
-            name={`Show ${tab.label}`}
-            description={visible ? 'Shown' : 'Hidden'}
-            checked={visible}
-            onChange={(v) => update((s) => (s.nav.tabs[tab.key] = v))}
-          />
-        );
-      })}
-    </Group>
-  );
-}
-
-function RepoLookGroup({ settings, update }: GroupProps) {
-  return (
-    <Group title="Tab bar">
-      <ToggleRow
-        label="Blue selected tab"
-        name="Blue selected tab"
-        description="Color the selected tab's text and icon accent blue instead of underlining it in orange."
-        checked={settings.nav.accentSelectedTab}
-        onChange={(v) => update((s) => (s.nav.accentSelectedTab = v))}
-      />
-    </Group>
-  );
-}
-
-// --- Pull requests ---------------------------------------------------------
-
-function RedesignGroup({ settings, update }: GroupProps) {
-  return (
-    <Group
-      title="Appearance"
-      description="Visual overhaul of the pull request page. Works with all GitHub themes."
-    >
-      <ToggleRow
-        label="Enable Pull Request Page Redesign"
-        name="Enable Pull Request Page Redesign"
-        checked={settings.appearance.redesign}
-        onChange={(v) => update((s) => (s.appearance.redesign = v))}
-      />
-    </Group>
-  );
-}
+// --- Layout ----------------------------------------------------------------
 
 function ChecksGroup({ settings, update }: GroupProps) {
   const l = settings.layout;
@@ -351,41 +327,10 @@ function SidebarGroup({ settings, update }: GroupProps) {
   );
 }
 
-function SidebarSectionsGroup({ settings, update }: GroupProps) {
-  return (
-    <Group
-      collapsible
-      title="Sidebar sections"
-      description="Turn a section off to hide it on PR & issue pages."
-    >
-      {SIDEBAR_SECTIONS.map((section) => {
-        const visible = settings.sidebar.sections[section.key] ?? true;
-        return (
-          <ToggleRow
-            key={section.key}
-            label={section.label}
-            name={`Show ${section.label}`}
-            description={visible ? 'Shown' : 'Hidden'}
-            checked={visible}
-            onChange={(v) => update((s) => (s.sidebar.sections[section.key] = v))}
-          />
-        );
-      })}
-    </Group>
-  );
-}
-
 function ConversationGroup({ settings, update }: GroupProps) {
   const l = settings.layout;
   return (
     <Group title="Conversation">
-      <ToggleRow
-        label="Hide-as-outdated button"
-        name="Hide-as-outdated button"
-        description="A “Hide” button on each comment that minimizes it as outdated in one click."
-        checked={settings.hideComments.enabled}
-        onChange={(v) => update((s) => (s.hideComments.enabled = v))}
-      />
       <ToggleRow
         label={<Experimental>Move comment box to top</Experimental>}
         name="Move comment box to top"
@@ -394,11 +339,11 @@ function ConversationGroup({ settings, update }: GroupProps) {
         onChange={(v) => update((s) => (s.layout.composeTop = v))}
       />
       <ToggleRow
-        label="Hide guidelines & ProTip"
-        name="Hide guidelines & ProTip"
-        description="Hide the Community Guidelines reminder and the ProTip line."
-        checked={l.hideNotices}
-        onChange={(v) => update((s) => (s.layout.hideNotices = v))}
+        label="Hide-as-outdated button"
+        name="Hide-as-outdated button"
+        description="A “Hide” button on each comment that minimizes it as outdated in one click."
+        checked={settings.hideComments.enabled}
+        onChange={(v) => update((s) => (s.hideComments.enabled = v))}
       />
       <ToggleRow
         label="Back to top button"
@@ -411,15 +356,71 @@ function ConversationGroup({ settings, update }: GroupProps) {
   );
 }
 
-function FilesGroup({ settings, update }: GroupProps) {
+// --- Hide ------------------------------------------------------------------
+
+function RepoTabsGroup({ settings, update }: GroupProps) {
+  const tabs = useRepoTabs();
+
   return (
-    <Group title="Files changed">
-      <ToggleRow
-        label="Hide viewed files"
-        name="Hide viewed files"
-        description="Open the Files changed tab with files you've marked as viewed already filtered out. Tick Viewed files in GitHub's file filter to show them again."
-        checked={settings.layout.hideViewedFiles}
-        onChange={(v) => update((s) => (s.layout.hideViewedFiles = v))}
+    <Group
+      title="Repository tabs"
+      description="The bar at the top of every repository. “My PRs” is added by this extension, next to “Pull requests”, and opens the same page filtered to your own open PRs."
+    >
+      {tabs.map((tab) => (
+        <ShowRow
+          key={tab.key}
+          label={tab.label}
+          visible={settings.nav.tabs[tab.key] ?? true}
+          onChange={(v) => update((s) => (s.nav.tabs[tab.key] = v))}
+        />
+      ))}
+    </Group>
+  );
+}
+
+function SidebarSectionsGroup({ settings, update }: GroupProps) {
+  return (
+    <Group title="Sidebar sections" description="On pull request & issue pages.">
+      {SIDEBAR_SECTIONS.map((section) => (
+        <ShowRow
+          key={section.key}
+          label={section.label}
+          visible={settings.sidebar.sections[section.key] ?? true}
+          onChange={(v) => update((s) => (s.sidebar.sections[section.key] = v))}
+        />
+      ))}
+    </Group>
+  );
+}
+
+function PageElementsGroup({ settings, update }: GroupProps) {
+  const l = settings.layout;
+  return (
+    <Group title="Page">
+      <ShowRow
+        label="Guidelines & ProTip"
+        description={
+          l.hideNotices
+            ? 'Hidden: the Community Guidelines reminder and the ProTip line.'
+            : 'Shown: the Community Guidelines reminder and the ProTip line.'
+        }
+        visible={!l.hideNotices}
+        onChange={(v) => update((s) => (s.layout.hideNotices = !v))}
+      />
+      <ShowRow
+        label="Viewed files"
+        description={
+          l.hideViewedFiles
+            ? 'Hidden when Files changed opens. Tick Viewed files in GitHub’s file filter to show them again.'
+            : 'Shown when Files changed opens, as GitHub does.'
+        }
+        visible={!l.hideViewedFiles}
+        onChange={(v) => update((s) => (s.layout.hideViewedFiles = !v))}
+      />
+      <ShowRow
+        label="Footer"
+        visible={!l.hideFooter}
+        onChange={(v) => update((s) => (s.layout.hideFooter = !v))}
       />
     </Group>
   );
@@ -428,9 +429,9 @@ function FilesGroup({ settings, update }: GroupProps) {
 // --- Shell -----------------------------------------------------------------
 
 const PAGES = [
-  { key: 'pr', label: 'Pull requests' },
-  { key: 'repo', label: 'Repository' },
   { key: 'general', label: 'General' },
+  { key: 'layout', label: 'Layout' },
+  { key: 'hide', label: 'Hide' },
 ] as const;
 type PageKey = (typeof PAGES)[number]['key'];
 
@@ -478,26 +479,25 @@ function App() {
 
       {props && (
         <div role="tabpanel" id={`panel-${page}`} aria-labelledby={`tab-${page}`}>
-          {page === 'pr' && (
-            <>
-              <RedesignGroup {...props} />
-              <ChecksGroup {...props} />
-              <SidebarGroup {...props} />
-              <SidebarSectionsGroup {...props} />
-              <ConversationGroup {...props} />
-              <FilesGroup {...props} />
-            </>
-          )}
-          {page === 'repo' && (
-            <>
-              <RepoLookGroup {...props} />
-              <RepoTabsGroup {...props} />
-            </>
-          )}
           {page === 'general' && (
             <>
+              <AppearanceGroup {...props} />
               <DatesGroup {...props} />
               <PageGroup {...props} />
+            </>
+          )}
+          {page === 'layout' && (
+            <>
+              <ChecksGroup {...props} />
+              <SidebarGroup {...props} />
+              <ConversationGroup {...props} />
+            </>
+          )}
+          {page === 'hide' && (
+            <>
+              <RepoTabsGroup {...props} />
+              <SidebarSectionsGroup {...props} />
+              <PageElementsGroup {...props} />
             </>
           )}
         </div>
