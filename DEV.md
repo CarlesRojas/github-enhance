@@ -7,8 +7,7 @@
 ## Build
 
 ```bash
-npm install     # once
-npm run build   # outputs the extension into dist/
+npm install && npm run build
 ```
 
 Useful during development:

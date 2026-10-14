@@ -165,6 +165,90 @@ html[data-ghe-sticky-sidebar] .Layout-sidebar:has(#partial-discussion-sidebar) {
   background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #e7ebef));
 }
 
+/* Sidebar collapse button (sidebarToggle.ts): takes the back-to-top button's
+   spot at the bottom right and, unlike it, is always visible. The back-to-top
+   button moves one slot left (button width + gap) while it's shown. */
+#ghe-sidebar-toggle {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid
+    var(
+      --button-default-borderColor-rest,
+      var(--borderColor-default, var(--color-border-default, #d0d7de))
+    );
+  border-radius: 50%;
+  background: var(--button-default-bgColor-rest, var(--color-btn-bg, #f6f8fa));
+  color: var(--button-default-fgColor-rest, var(--fgColor-default, #1f2328));
+  box-shadow: var(--shadow-resting-medium, 0 3px 6px rgba(140, 149, 159, 0.15));
+  cursor: pointer;
+}
+
+#ghe-sidebar-toggle:hover {
+  background: var(--button-default-bgColor-hover, var(--color-btn-hover-bg, #eff2f5));
+}
+
+#ghe-sidebar-toggle:active {
+  background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #e7ebef));
+}
+
+html[data-ghe-sidebar-toggle] #ghe-scroll-top {
+  right: calc(24px + 40px + 8px);
+}
+
+/* Collapsed: the pane is squeezed to zero width (not removed, so React's DOM
+   stays intact and the pane keeps its place beside the main column) and the
+   column gap goes with it. The extra attribute out-specifies the wide- and
+   sticky-sidebar rules above. */
+html[data-ghe-sidebar-collapsed]
+  [class*="prc-PageLayout-PaneWrapper"]:has(#pr-conversation-sidebar),
+html[data-ghe-sidebar-collapsed] .Layout-sidebar:has(#partial-discussion-sidebar) {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+}
+
+html[data-ghe-sidebar-collapsed]
+  [class*="prc-PageLayout-PageLayoutContent"]:has(#pr-conversation-sidebar) {
+  column-gap: 0 !important;
+}
+
+/* GitHub caps the conversation column at ~1012px and centres it in whatever
+   room the sidebar leaves, so on wide pages it sits indented from the page's
+   left edge — and jumps left when the sidebar collapses. Lifting the cap in
+   both states keeps it flush left and lets it fill the space either way. */
+html[data-ghe-wide-sidebar]
+  [class*="prc-PageLayout-PageLayoutContent"]:has(#pr-conversation-sidebar)
+  > [class*="prc-PageLayout-ContentWrapper"],
+html[data-ghe-wide-sidebar]
+  [class*="prc-PageLayout-PageLayoutContent"]:has(#pr-conversation-sidebar)
+  > [class*="prc-PageLayout-ContentWrapper"]
+  > [class*="prc-PageLayout-Content"],
+html[data-ghe-sidebar-collapsed]
+  [class*="prc-PageLayout-PageLayoutContent"]:has(#pr-conversation-sidebar)
+  > [class*="prc-PageLayout-ContentWrapper"],
+html[data-ghe-sidebar-collapsed]
+  [class*="prc-PageLayout-PageLayoutContent"]:has(#pr-conversation-sidebar)
+  > [class*="prc-PageLayout-ContentWrapper"]
+  > [class*="prc-PageLayout-Content"] {
+  max-width: none !important;
+}
+
+html[data-ghe-sidebar-collapsed] .Layout:has(#partial-discussion-sidebar) {
+  --Layout-sidebar-width: 0px !important;
+  --Layout-gutter: 0px !important;
+}
+
 /* Hide GitHub's page footer (site-wide) when the option is on. */
 html[data-ghe-hide-footer] .footer,
 html[data-ghe-hide-footer] footer[role="contentinfo"],

@@ -300,6 +300,17 @@ function LayoutGroup({ settings, update }: GroupProps) {
         }
       />
       <Row
+        label="Collapsible sidebar"
+        description="Add a button at the bottom right of pull requests that hides the sidebar, leaving the description, comments and timeline at full width. Press it again to bring the sidebar back."
+        control={
+          <Toggle
+            checked={l.sidebarToggle}
+            label="Collapsible sidebar"
+            onChange={(v) => update((s) => (s.layout.sidebarToggle = v))}
+          />
+        }
+      />
+      <Row
         label="Pause while resizing"
         description="Skip page updates while the window is being resized, then catch up once it settles. Keeps resizing smooth."
         control={
