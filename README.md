@@ -60,6 +60,12 @@ Hide sidebar sections you don’t use on PR/issue pages.
   Primer utilities like `.d-block`. Re-enabling a section restores it without a
   reload.
 - *Lock conversation* hides just that control, not a neighbouring Pin button.
+- **Collapsible sidebar** (Layout, on by default) — an always-visible round
+  button at the bottom right of the PR conversation hides the sidebar, leaving
+  the description, comments and timeline at full width (the checks box moves
+  above the timeline); press it again to bring the sidebar back. The
+  back-to-top button sits to its left, and the choice is remembered across
+  pages.
 
 ### 4. Repository Tabs
 

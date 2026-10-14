@@ -17,6 +17,7 @@ import { applyNav } from './features/nav';
 import { applyNotices } from './features/notices';
 import { applyRedesign } from './features/redesign';
 import { applyScrollTop } from './features/scrollTop';
+import { applySidebarToggle, setSidebarToggleListener } from './features/sidebarToggle';
 import { isResizing, setResizing } from './util';
 
 let current: Settings | null = null;
@@ -45,6 +46,8 @@ function applyAll(settings: Settings): void {
     run('dates', () => applyDates(settings));
     run('sidebar', () => applySidebar(settings));
     run('hideComments', () => applyHideButtons(settings));
+    // Before layout: the checks box leaves a collapsed sidebar for the top.
+    run('sidebarToggle', () => applySidebarToggle(settings));
     run('layout', () => {
       if (!navigating) applyLayout(settings);
     });
@@ -76,6 +79,9 @@ function connectObserver(): void {
 
 async function init(): Promise<void> {
   current = await loadSettings();
+  setSidebarToggleListener(() => {
+    if (current) applyAll(current);
+  });
   applyAll(current);
 
   onSettingsChanged((settings) => {

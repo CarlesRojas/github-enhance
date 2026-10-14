@@ -11,6 +11,7 @@
 
 import { PAGE_WIDTH_DEFAULT, Settings } from '../../shared/settings';
 import { isPRPage } from '../util';
+import { isSidebarCollapsed } from './sidebarToggle';
 
 const SIG = 'data-ghe-layout';
 const MOVED = 'data-ghe-moved';
@@ -362,7 +363,8 @@ type ChecksPlacement = 'off' | 'top' | 'sidebar';
 
 function checksPlacement(settings: Settings, column = sidebarIsColumn()): ChecksPlacement {
   if (!settings.layout.checksTop) return 'off';
-  return column ? 'sidebar' : 'top';
+  // A collapsed sidebar would hide the checks; keep them above the timeline.
+  return column && !isSidebarCollapsed() ? 'sidebar' : 'top';
 }
 
 /**
@@ -425,7 +427,7 @@ export function applyLayout(settings: Settings): void {
   // Measured once per pass: each call forces layout (getBoundingClientRect).
   const onPR = isPRPage();
   const column = sidebarIsColumn();
-  setWideSidebar(onPR && column);
+  setWideSidebar(onPR && column && !isSidebarCollapsed());
   // Sticky sidebar only makes sense while it's a column; behind its own toggle.
   const sticky = settings.layout.stickySidebar && onPR && column;
   stickyOn = sticky;
