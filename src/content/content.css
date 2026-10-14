@@ -1018,19 +1018,28 @@ html[data-ghe-redesign] .ajax-pagination-form .ajax-pagination-btn {
   background-color: transparent !important;
 }
 
-/* Fade-in for pull requests (fadeIn.ts). From the PR title down, held at
-   opacity 0 while <html> has data-ghe-fade — set before the first paint and
-   removed once our layout is in place — then faded in. The repo header and
-   tab bar outside the container stay as they are. */
-#repo-content-pjax-container {
+/* Fade-in for pull requests (fadeIn.ts). Only what's below the PR's tabs
+   (Conversation, Commits, Checks, Files changed) — the timeline and sidebar,
+   the part our layout rearranges — is held at opacity 0 while <html> has
+   data-ghe-fade, then faded in. The repo header, PR title and tabs show as
+   soon as they're there. It's the content half of GitHub's PageLayout whose
+   header holds the PR tabs. */
+#repo-content-pjax-container
+  [class*="prc-PageLayout-PageLayoutWrapper"]:has(> header [class*="prc-PageHeader-Navigation"])
+  > [class*="prc-PageLayout-PageLayoutContent"] {
   transition: opacity 200ms ease-out;
 }
-html[data-ghe-fade] #repo-content-pjax-container {
+html[data-ghe-fade]
+  #repo-content-pjax-container
+  [class*="prc-PageLayout-PageLayoutWrapper"]:has(> header [class*="prc-PageHeader-Navigation"])
+  > [class*="prc-PageLayout-PageLayoutContent"] {
   opacity: 0 !important;
   transition: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  #repo-content-pjax-container {
+  #repo-content-pjax-container
+    [class*="prc-PageLayout-PageLayoutWrapper"]:has(> header [class*="prc-PageHeader-Navigation"])
+    > [class*="prc-PageLayout-PageLayoutContent"] {
     transition: none;
   }
 }

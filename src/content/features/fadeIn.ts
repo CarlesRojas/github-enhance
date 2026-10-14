@@ -1,9 +1,9 @@
 // Fade a pull request in once our layout is in place, instead of showing it
 // while the checks box and sidebar are still being moved.
 //
-// Everything from the PR title down (#repo-content-pjax-container; the repo
-// header and tab bar stay put) is held at opacity 0 by content.css while
-// <html> carries the attribute, then fades in when it's removed:
+// What's below the PR's tabs (the timeline and sidebar; the title and tabs
+// show straight away) is held at opacity 0 by content.css while <html>
+// carries the attribute, then fades in when it's removed:
 // - Full load: boot.ts sets it at document_start, before the first paint.
 // - Soft navigation: the first pass that sees a new conversation sets it, in
 //   the same frame the view is inserted (passes run in requestAnimationFrame,
