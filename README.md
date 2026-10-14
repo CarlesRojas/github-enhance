@@ -10,8 +10,11 @@ or heavy toolchain.
 
 ## Features
 
-Each feature has its own group in the popup, with a small title and a row per
-setting.
+The popup is split into three pages by what a setting does — **General** (how
+GitHub looks), **Layout** (where things go on a pull request, and the buttons
+the extension adds) and **Hide** (everything that can be taken off the page;
+on = shown, off = hidden) — and each page groups its settings under small
+titles, one row per setting.
 
 ### 1. Dates
 

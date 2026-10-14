@@ -1,5 +1,5 @@
 // Small presentational building blocks for the popup.
-import { ReactNode, useEffect, useState } from 'react';
+import { KeyboardEvent, ReactNode, useEffect, useState } from 'react';
 
 export function Group(props: {
   title: string;
@@ -33,6 +33,46 @@ export function Group(props: {
       <h2 className="group-title">{props.title}</h2>
       {body}
     </section>
+  );
+}
+
+/** Segmented tab bar switching between the popup's pages. */
+export function Tabs<K extends string>(props: {
+  tabs: readonly { key: K; label: string }[];
+  selected: K;
+  onSelect: (key: K) => void;
+}) {
+  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const i = props.tabs.findIndex((t) => t.key === props.selected);
+    const step = e.key === 'ArrowRight' ? 1 : -1;
+    const next = props.tabs[(i + step + props.tabs.length) % props.tabs.length];
+    props.onSelect(next.key);
+    document.getElementById(`tab-${next.key}`)?.focus();
+    e.preventDefault();
+  }
+
+  return (
+    <div className="tabs" role="tablist" onKeyDown={onKeyDown}>
+      {props.tabs.map((t) => {
+        const selected = t.key === props.selected;
+        return (
+          <button
+            key={t.key}
+            id={`tab-${t.key}`}
+            type="button"
+            role="tab"
+            className="tab"
+            aria-selected={selected}
+            aria-controls={`panel-${t.key}`}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => props.onSelect(t.key)}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
