@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useState } from 'react';
+import { ReactNode, StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './popup.css';
 import {
@@ -19,7 +19,7 @@ import {
   saveSettings,
 } from '../shared/settings';
 import { formatDate } from '../shared/formatDate';
-import { Group, Row, Select, Slider, Toggle } from './components';
+import { Group, Row, Select, Slider, Tabs, Toggle } from './components';
 
 const VERSION = chrome.runtime.getManifest().version;
 
@@ -82,66 +82,50 @@ interface GroupProps {
   update: (mutator: (draft: Settings) => void) => void;
 }
 
-function AppearanceGroup({ settings, update }: GroupProps) {
+// ---------------------------------------------------------------------------
+// The popup is split by the page a setting acts on: General (all of GitHub),
+// Repository (the tab bar on every repo page) and Pull requests, which is
+// grouped again by area of the PR page.
+// ---------------------------------------------------------------------------
+
+/** Settings row for a plain boolean switch. */
+function ToggleRow(props: {
+  label: ReactNode;
+  name: string;
+  description?: ReactNode;
+  checked: boolean;
+  disabled?: boolean;
+  indented?: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
-    <Group
-      title="Appearance"
-      description="Visual overhaul of the pull request page. Works with all GitHub themes."
-    >
-      <Row
-        label="Enable Pull Request Page Redesign"
-        control={
-          <Toggle
-            checked={settings.appearance.redesign}
-            label="Enable Pull Request Page Redesign"
-            onChange={(v) => update((s) => (s.appearance.redesign = v))}
-          />
-        }
-      />
-    </Group>
+    <Row
+      label={props.label}
+      description={props.description}
+      indented={props.indented}
+      disabled={props.disabled}
+      control={
+        <Toggle
+          checked={props.checked}
+          disabled={props.disabled}
+          label={props.name}
+          onChange={props.onChange}
+        />
+      }
+    />
   );
 }
 
-function NavigationGroup({ settings, update }: GroupProps) {
-  const tabs = useRepoTabs();
-
+function Experimental({ children }: { children: ReactNode }) {
   return (
-    <Group
-      collapsible
-      title="Hide Repository Tabs"
-      description="Turn a tab off to hide it from the bar at the top of every repository. “My PRs” is added by this extension, next to “Pull requests”, and opens the same page filtered to your own open PRs."
-    >
-      {tabs.map((tab) => {
-        const visible = settings.nav.tabs[tab.key] ?? true;
-        return (
-          <Row
-            key={tab.key}
-            label={tab.label}
-            description={visible ? 'Shown' : 'Hidden'}
-            control={
-              <Toggle
-                checked={visible}
-                label={`Show ${tab.label}`}
-                onChange={(v) => update((s) => (s.nav.tabs[tab.key] = v))}
-              />
-            }
-          />
-        );
-      })}
-      <Row
-        label="Blue selected tab"
-        description="Color the selected tab's text and icon accent blue instead of underlining it in orange."
-        control={
-          <Toggle
-            checked={settings.nav.accentSelectedTab}
-            label="Blue selected tab"
-            onChange={(v) => update((s) => (s.nav.accentSelectedTab = v))}
-          />
-        }
-      />
-    </Group>
+    <>
+      {children}
+      <span className="tag">Experimental</span>
+    </>
   );
 }
+
+// --- General ---------------------------------------------------------------
 
 function DatesGroup({ settings, update }: GroupProps) {
   const d = settings.dates;
@@ -152,15 +136,11 @@ function DatesGroup({ settings, update }: GroupProps) {
       title="Dates"
       description="Replace relative dates like “yesterday” with an absolute date & time."
     >
-      <Row
+      <ToggleRow
         label="Show absolute dates"
-        control={
-          <Toggle
-            checked={d.enabled}
-            label="Show absolute dates"
-            onChange={(v) => update((s) => (s.dates.enabled = v))}
-          />
-        }
+        name="Show absolute dates"
+        checked={d.enabled}
+        onChange={(v) => update((s) => (s.dates.enabled = v))}
       />
 
       <Row
@@ -193,19 +173,14 @@ function DatesGroup({ settings, update }: GroupProps) {
         }
       />
 
-      <Row
+      <ToggleRow
         label="Hide year when current"
+        name="Hide year when current"
         description="Omit the year for dates in the current year."
         indented
         disabled={!d.enabled}
-        control={
-          <Toggle
-            checked={d.hideCurrentYear}
-            disabled={!d.enabled}
-            label="Hide year when current"
-            onChange={(v) => update((s) => (s.dates.hideCurrentYear = v))}
-          />
-        }
+        checked={d.hideCurrentYear}
+        onChange={(v) => update((s) => (s.dates.hideCurrentYear = v))}
       />
 
       {d.enabled && (
@@ -219,119 +194,10 @@ function DatesGroup({ settings, update }: GroupProps) {
   );
 }
 
-function LayoutGroup({ settings, update }: GroupProps) {
+function PageGroup({ settings, update }: GroupProps) {
   const l = settings.layout;
   return (
-    <Group
-      title="Pull Request Layout"
-      description="Rearrange the conversation. Applied on load — reload a PR after changing."
-    >
-      <Row
-        label={
-          <>
-            Move checks up
-            <span className="tag">Experimental</span>
-          </>
-        }
-        description="Above the timeline on mobile; into the sidebar on wide screens."
-        control={
-          <Toggle
-            checked={l.checksTop}
-            label="Move checks up"
-            onChange={(v) => update((s) => (s.layout.checksTop = v))}
-          />
-        }
-      />
-      <Row
-        label={
-          <>
-            Close button in checks
-            <span className="tag">Experimental</span>
-          </>
-        }
-        description="Move the Close/Reopen PR button into the checks box, beside Convert to draft. Needs the redesign on."
-        control={
-          <Toggle
-            checked={l.closeInChecks}
-            label="Close button in checks"
-            onChange={(v) => update((s) => (s.layout.closeInChecks = v))}
-          />
-        }
-      />
-      <Row
-        label="Sidebar width"
-        description="Width of the PR sidebar on wide screens, as % of the content."
-        control={
-          <Slider
-            value={l.sidebarWidthPct}
-            min={SIDEBAR_PCT_MIN}
-            max={SIDEBAR_PCT_MAX}
-            suffix="%"
-            ariaLabel="Sidebar width"
-            onCommit={(v) => update((s) => (s.layout.sidebarWidthPct = v))}
-          />
-        }
-      />
-      <Row
-        label={
-          <>
-            Sticky sidebar
-            <span className="tag">Experimental</span>
-          </>
-        }
-        description="Keep the PR sidebar in view while the page scrolls."
-        control={
-          <Toggle
-            checked={l.stickySidebar}
-            label="Sticky sidebar"
-            onChange={(v) => update((s) => (s.layout.stickySidebar = v))}
-          />
-        }
-      />
-      <Row
-        label="Back to top button"
-        description="Show a button at the bottom right of pull requests to jump back to the top once you've scrolled down."
-        control={
-          <Toggle
-            checked={l.scrollTopButton}
-            label="Back to top button"
-            onChange={(v) => update((s) => (s.layout.scrollTopButton = v))}
-          />
-        }
-      />
-      <Row
-        label="Collapsible sidebar"
-        description="Add a button at the bottom right of pull requests that hides the sidebar, leaving the description, comments and timeline at full width. Press it again to bring the sidebar back."
-        control={
-          <Toggle
-            checked={l.sidebarToggle}
-            label="Collapsible sidebar"
-            onChange={(v) => update((s) => (s.layout.sidebarToggle = v))}
-          />
-        }
-      />
-      <Row
-        label="Hide viewed files"
-        description="Open the Files changed tab with files you've marked as viewed already filtered out. Tick Viewed files in GitHub's file filter to show them again."
-        control={
-          <Toggle
-            checked={l.hideViewedFiles}
-            label="Hide viewed files"
-            onChange={(v) => update((s) => (s.layout.hideViewedFiles = v))}
-          />
-        }
-      />
-      <Row
-        label="Pause while resizing"
-        description="Skip page updates while the window is being resized, then catch up once it settles. Keeps resizing smooth."
-        control={
-          <Toggle
-            checked={l.pauseWhileResizing}
-            label="Pause while resizing"
-            onChange={(v) => update((s) => (s.layout.pauseWhileResizing = v))}
-          />
-        }
-      />
+    <Group title="Page">
       <Row
         label="Page width"
         description="Max width of the page content."
@@ -347,69 +213,44 @@ function LayoutGroup({ settings, update }: GroupProps) {
           />
         }
       />
-      <Row
-        label={
-          <>
-            Move comment box to top
-            <span className="tag">Experimental</span>
-          </>
-        }
-        description="Show the “Add a comment” box above the timeline."
-        control={
-          <Toggle
-            checked={l.composeTop}
-            label="Move comment box to top"
-            onChange={(v) => update((s) => (s.layout.composeTop = v))}
-          />
-        }
-      />
-      <Row
-        label="Hide guidelines & ProTip"
-        description="Hide the Community Guidelines reminder and the ProTip line."
-        control={
-          <Toggle
-            checked={l.hideNotices}
-            label="Hide guidelines & ProTip"
-            onChange={(v) => update((s) => (s.layout.hideNotices = v))}
-          />
-        }
-      />
-      <Row
+      <ToggleRow
         label="Hide footer"
+        name="Hide footer"
         description="Hide GitHub's page footer."
-        control={
-          <Toggle
-            checked={l.hideFooter}
-            label="Hide footer"
-            onChange={(v) => update((s) => (s.layout.hideFooter = v))}
-          />
-        }
+        checked={l.hideFooter}
+        onChange={(v) => update((s) => (s.layout.hideFooter = v))}
+      />
+      <ToggleRow
+        label="Pause while resizing"
+        name="Pause while resizing"
+        description="Skip page updates while the window is being resized, then catch up once it settles. Keeps resizing smooth."
+        checked={l.pauseWhileResizing}
+        onChange={(v) => update((s) => (s.layout.pauseWhileResizing = v))}
       />
     </Group>
   );
 }
 
-function SidebarGroup({ settings, update }: GroupProps) {
+// --- Repository ------------------------------------------------------------
+
+function RepoTabsGroup({ settings, update }: GroupProps) {
+  const tabs = useRepoTabs();
+
   return (
     <Group
-      collapsible
-      title="Hide PR Sidebar Sections"
-      description="Turn a section off to hide it on PR & issue pages."
+      title="Tabs"
+      description="Turn a tab off to hide it from the bar at the top of every repository. “My PRs” is added by this extension, next to “Pull requests”, and opens the same page filtered to your own open PRs."
     >
-      {SIDEBAR_SECTIONS.map((section) => {
-        const visible = settings.sidebar.sections[section.key] ?? true;
+      {tabs.map((tab) => {
+        const visible = settings.nav.tabs[tab.key] ?? true;
         return (
-          <Row
-            key={section.key}
-            label={section.label}
+          <ToggleRow
+            key={tab.key}
+            label={tab.label}
+            name={`Show ${tab.label}`}
             description={visible ? 'Shown' : 'Hidden'}
-            control={
-              <Toggle
-                checked={visible}
-                label={`Show ${section.label}`}
-                onChange={(v) => update((s) => (s.sidebar.sections[section.key] = v))}
-              />
-            }
+            checked={visible}
+            onChange={(v) => update((s) => (s.nav.tabs[tab.key] = v))}
           />
         );
       })}
@@ -417,49 +258,249 @@ function SidebarGroup({ settings, update }: GroupProps) {
   );
 }
 
-function CommentsGroup({ settings, update }: GroupProps) {
+function RepoLookGroup({ settings, update }: GroupProps) {
   return (
-    <Group
-      title="Comments"
-      description="Add a one-click hide button to pull request comments."
-    >
-      <Row
-        label="Hide-as-outdated button"
-        description="Shows a “Hide” button on each comment that minimizes it as outdated."
-        control={
-          <Toggle
-            checked={settings.hideComments.enabled}
-            label="Hide-as-outdated button"
-            onChange={(v) => update((s) => (s.hideComments.enabled = v))}
-          />
-        }
+    <Group title="Tab bar">
+      <ToggleRow
+        label="Blue selected tab"
+        name="Blue selected tab"
+        description="Color the selected tab's text and icon accent blue instead of underlining it in orange."
+        checked={settings.nav.accentSelectedTab}
+        onChange={(v) => update((s) => (s.nav.accentSelectedTab = v))}
       />
     </Group>
   );
 }
 
+// --- Pull requests ---------------------------------------------------------
+
+function RedesignGroup({ settings, update }: GroupProps) {
+  return (
+    <Group
+      title="Appearance"
+      description="Visual overhaul of the pull request page. Works with all GitHub themes."
+    >
+      <ToggleRow
+        label="Enable Pull Request Page Redesign"
+        name="Enable Pull Request Page Redesign"
+        checked={settings.appearance.redesign}
+        onChange={(v) => update((s) => (s.appearance.redesign = v))}
+      />
+    </Group>
+  );
+}
+
+function ChecksGroup({ settings, update }: GroupProps) {
+  const l = settings.layout;
+  return (
+    <Group
+      title="Checks"
+      description="Where the checks / merge box goes. Applied on load — reload a PR after changing."
+    >
+      <ToggleRow
+        label={<Experimental>Move checks up</Experimental>}
+        name="Move checks up"
+        description="Above the timeline on mobile; into the sidebar on wide screens."
+        checked={l.checksTop}
+        onChange={(v) => update((s) => (s.layout.checksTop = v))}
+      />
+      <ToggleRow
+        label={<Experimental>Close button in checks</Experimental>}
+        name="Close button in checks"
+        description="Move the Close/Reopen PR button into the checks box, beside Convert to draft. Needs the redesign on."
+        checked={l.closeInChecks}
+        onChange={(v) => update((s) => (s.layout.closeInChecks = v))}
+      />
+    </Group>
+  );
+}
+
+function SidebarGroup({ settings, update }: GroupProps) {
+  const l = settings.layout;
+  return (
+    <Group title="Sidebar">
+      <Row
+        label="Sidebar width"
+        description="Width of the PR sidebar on wide screens, as % of the content."
+        control={
+          <Slider
+            value={l.sidebarWidthPct}
+            min={SIDEBAR_PCT_MIN}
+            max={SIDEBAR_PCT_MAX}
+            suffix="%"
+            ariaLabel="Sidebar width"
+            onCommit={(v) => update((s) => (s.layout.sidebarWidthPct = v))}
+          />
+        }
+      />
+      <ToggleRow
+        label="Collapsible sidebar"
+        name="Collapsible sidebar"
+        description="A button at the bottom right that hides the sidebar, leaving the description, comments and timeline at full width. Press it again to bring the sidebar back."
+        checked={l.sidebarToggle}
+        onChange={(v) => update((s) => (s.layout.sidebarToggle = v))}
+      />
+      <ToggleRow
+        label={<Experimental>Sticky sidebar</Experimental>}
+        name="Sticky sidebar"
+        description="Keep the PR sidebar in view while the page scrolls."
+        checked={l.stickySidebar}
+        onChange={(v) => update((s) => (s.layout.stickySidebar = v))}
+      />
+    </Group>
+  );
+}
+
+function SidebarSectionsGroup({ settings, update }: GroupProps) {
+  return (
+    <Group
+      collapsible
+      title="Sidebar sections"
+      description="Turn a section off to hide it on PR & issue pages."
+    >
+      {SIDEBAR_SECTIONS.map((section) => {
+        const visible = settings.sidebar.sections[section.key] ?? true;
+        return (
+          <ToggleRow
+            key={section.key}
+            label={section.label}
+            name={`Show ${section.label}`}
+            description={visible ? 'Shown' : 'Hidden'}
+            checked={visible}
+            onChange={(v) => update((s) => (s.sidebar.sections[section.key] = v))}
+          />
+        );
+      })}
+    </Group>
+  );
+}
+
+function ConversationGroup({ settings, update }: GroupProps) {
+  const l = settings.layout;
+  return (
+    <Group title="Conversation">
+      <ToggleRow
+        label="Hide-as-outdated button"
+        name="Hide-as-outdated button"
+        description="A “Hide” button on each comment that minimizes it as outdated in one click."
+        checked={settings.hideComments.enabled}
+        onChange={(v) => update((s) => (s.hideComments.enabled = v))}
+      />
+      <ToggleRow
+        label={<Experimental>Move comment box to top</Experimental>}
+        name="Move comment box to top"
+        description="Show the “Add a comment” box above the timeline. Applied on load."
+        checked={l.composeTop}
+        onChange={(v) => update((s) => (s.layout.composeTop = v))}
+      />
+      <ToggleRow
+        label="Hide guidelines & ProTip"
+        name="Hide guidelines & ProTip"
+        description="Hide the Community Guidelines reminder and the ProTip line."
+        checked={l.hideNotices}
+        onChange={(v) => update((s) => (s.layout.hideNotices = v))}
+      />
+      <ToggleRow
+        label="Back to top button"
+        name="Back to top button"
+        description="A button at the bottom right to jump back to the top once you've scrolled down."
+        checked={l.scrollTopButton}
+        onChange={(v) => update((s) => (s.layout.scrollTopButton = v))}
+      />
+    </Group>
+  );
+}
+
+function FilesGroup({ settings, update }: GroupProps) {
+  return (
+    <Group title="Files changed">
+      <ToggleRow
+        label="Hide viewed files"
+        name="Hide viewed files"
+        description="Open the Files changed tab with files you've marked as viewed already filtered out. Tick Viewed files in GitHub's file filter to show them again."
+        checked={settings.layout.hideViewedFiles}
+        onChange={(v) => update((s) => (s.layout.hideViewedFiles = v))}
+      />
+    </Group>
+  );
+}
+
+// --- Shell -----------------------------------------------------------------
+
+const PAGES = [
+  { key: 'pr', label: 'Pull requests' },
+  { key: 'repo', label: 'Repository' },
+  { key: 'general', label: 'General' },
+] as const;
+type PageKey = (typeof PAGES)[number]['key'];
+
+const PAGE_STORAGE_KEY = 'ghe-popup-page';
+
+/** The selected page, remembered between popup openings on this machine. */
+function usePage(): [PageKey, (p: PageKey) => void] {
+  const [page, setPage] = useState<PageKey>(() => {
+    try {
+      const saved = localStorage.getItem(PAGE_STORAGE_KEY);
+      if (PAGES.some((p) => p.key === saved)) return saved as PageKey;
+    } catch {
+      // Storage unavailable: start on the first page.
+    }
+    return PAGES[0].key;
+  });
+
+  function select(p: PageKey) {
+    setPage(p);
+    try {
+      localStorage.setItem(PAGE_STORAGE_KEY, p);
+    } catch {
+      // Not remembered; harmless.
+    }
+  }
+
+  return [page, select];
+}
+
 function App() {
   const { settings, update } = useSettings();
+  const [page, setPage] = usePage();
+  const props = settings && { settings, update };
 
   return (
     <div className="app">
-      <header className="app-header">
-        <Logo />
-        <h1>GitHub Enhance</h1>
-        <span className="version">v{VERSION}</span>
-      </header>
+      <div className="app-top">
+        <header className="app-header">
+          <Logo />
+          <h1>GitHub Enhance</h1>
+          <span className="version">v{VERSION}</span>
+        </header>
+        <Tabs tabs={PAGES} selected={page} onSelect={setPage} />
+      </div>
 
-      {settings && (
-        <>
-          <AppearanceGroup settings={settings} update={update} />
-          <DatesGroup settings={settings} update={update} />
-          <LayoutGroup settings={settings} update={update} />
-          <CommentsGroup settings={settings} update={update} />
-          {/* The two per-item lists sit together, collapsed, so they don't
-              bury the switches above them. */}
-          <NavigationGroup settings={settings} update={update} />
-          <SidebarGroup settings={settings} update={update} />
-        </>
+      {props && (
+        <div role="tabpanel" id={`panel-${page}`} aria-labelledby={`tab-${page}`}>
+          {page === 'pr' && (
+            <>
+              <RedesignGroup {...props} />
+              <ChecksGroup {...props} />
+              <SidebarGroup {...props} />
+              <SidebarSectionsGroup {...props} />
+              <ConversationGroup {...props} />
+              <FilesGroup {...props} />
+            </>
+          )}
+          {page === 'repo' && (
+            <>
+              <RepoLookGroup {...props} />
+              <RepoTabsGroup {...props} />
+            </>
+          )}
+          {page === 'general' && (
+            <>
+              <DatesGroup {...props} />
+              <PageGroup {...props} />
+            </>
+          )}
+        </div>
       )}
     </div>
   );
