@@ -18,6 +18,7 @@ import { applyNotices } from './features/notices';
 import { applyRedesign } from './features/redesign';
 import { applyScrollTop } from './features/scrollTop';
 import { applyHideViewedFiles } from './features/hideViewedFiles';
+import { applyEarly, cacheSettings } from './early';
 import { applySidebarToggle, setSidebarToggleListener } from './features/sidebarToggle';
 import { isResizing, setResizing } from './util';
 
@@ -80,7 +81,11 @@ function connectObserver(): void {
 }
 
 async function init(): Promise<void> {
-  current = await loadSettings();
+  const settings = await loadSettings();
+  current = settings;
+  // Keep boot.ts's copy current, and replace its first-paint guesses.
+  cacheSettings(settings);
+  run('early', () => applyEarly(settings));
   setSidebarToggleListener(() => {
     if (current) applyAll(current);
   });
@@ -88,6 +93,8 @@ async function init(): Promise<void> {
 
   onSettingsChanged((settings) => {
     current = settings;
+    cacheSettings(settings);
+    run('early', () => applyEarly(settings));
     if (!settings.layout.pauseWhileResizing) setResizing(false);
     applyAll(settings);
   });

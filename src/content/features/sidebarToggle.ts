@@ -17,6 +17,7 @@
 // sidebar is shown in full until the window widens again.
 
 import { Settings } from '../../shared/settings';
+import { cacheCollapsed, readCachedCollapsed } from '../early';
 import { isPRPage } from '../util';
 
 const ID = 'ghe-sidebar-toggle';
@@ -25,7 +26,9 @@ const ATTR = 'data-ghe-sidebar-collapsed';
 const SHOWN_ATTR = 'data-ghe-sidebar-toggle';
 const STORAGE_KEY = 'sidebarCollapsed';
 
-let collapsed = false;
+// Seeded from the page-side cache so the first pass already matches the stored
+// state (and what boot.ts painted); load() confirms it from storage.
+let collapsed = readCachedCollapsed();
 let loaded = false;
 let onChange: () => void = () => {};
 
@@ -59,8 +62,10 @@ function load(): void {
   chrome.storage.local
     .get(STORAGE_KEY)
     .then((data) => {
-      if (data[STORAGE_KEY] === true && !collapsed) {
-        collapsed = true;
+      const stored = data[STORAGE_KEY] === true;
+      cacheCollapsed(stored);
+      if (stored !== collapsed) {
+        collapsed = stored;
         onChange();
       }
     })
@@ -110,6 +115,7 @@ function ensureButton(): HTMLButtonElement {
     btn.addEventListener('click', () => {
       collapsed = !collapsed;
       chrome.storage.local.set({ [STORAGE_KEY]: collapsed }).catch(() => {});
+      cacheCollapsed(collapsed);
       onChange();
     });
     document.body.appendChild(btn);

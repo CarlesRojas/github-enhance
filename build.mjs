@@ -20,6 +20,7 @@ const shared = {
 
 const builds = [
   { entryPoints: ['src/popup/popup.tsx'], outfile: `${outdir}/popup.js` },
+  { entryPoints: ['src/content/boot.ts'], outfile: `${outdir}/boot.js` },
   { entryPoints: ['src/content/content.ts'], outfile: `${outdir}/content.js` },
   { entryPoints: ['src/content/content.css'], outfile: `${outdir}/content.css` },
 ];
