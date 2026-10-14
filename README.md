@@ -181,6 +181,8 @@ src/
     settings.ts          # settings schema, defaults, storage helpers
     formatDate.ts        # token-based date formatter
   content/
+    boot.ts              # document_start: paint our layout from the first frame
+    early.ts             # settings-only <html> attributes + cached settings
     content.ts           # orchestrator: apply on load/mutation/nav/settings
     content.css          # styles for injected elements
     util.ts              # waitFor, text helpers
