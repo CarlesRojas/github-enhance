@@ -403,7 +403,12 @@ function insertAfterDescription(
   parent.insertBefore(node, ref);
 }
 
-export function applyLayout(settings: Settings): void {
+/**
+ * `move: false` applies only the attributes and variables on <html> (widths,
+ * sticky, footer) — safe mid-navigation, and what keeps a PR soft-navigated
+ * into from painting centred at GitHub's width before snapping to ours.
+ */
+export function applyLayout(settings: Settings, { move = true } = {}): void {
   applyWidthVars(settings, isPRPage());
 
   // Footer hiding is site-wide, so toggle it before any PR-page early return.
@@ -434,6 +439,7 @@ export function applyLayout(settings: Settings): void {
   setStickySidebar(sticky);
   if (sticky) hookStickyScroll();
   publishStickyTop();
+  if (!move) return;
 
   const checks = checksPlacement(settings, column);
   const compose: 'off' | 'top' = settings.layout.composeTop ? 'top' : 'off';

@@ -7,6 +7,9 @@
 
 import { loadSettings } from '../shared/settings';
 import { applyEarly, cacheSettings, readCachedSettings } from './early';
+import { hideBeforePaint } from './features/fadeIn';
+
+hideBeforePaint();
 
 const cached = readCachedSettings();
 if (cached) applyEarly(cached, { predict: true });

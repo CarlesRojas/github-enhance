@@ -1017,3 +1017,20 @@ html[data-ghe-redesign] .discussion-timeline-actions .branch-action-item {
 html[data-ghe-redesign] .ajax-pagination-form .ajax-pagination-btn {
   background-color: transparent !important;
 }
+
+/* Fade-in for pull requests (fadeIn.ts). From the PR title down, held at
+   opacity 0 while <html> has data-ghe-fade — set before the first paint and
+   removed once our layout is in place — then faded in. The repo header and
+   tab bar outside the container stay as they are. */
+#repo-content-pjax-container {
+  transition: opacity 200ms ease-out;
+}
+html[data-ghe-fade] #repo-content-pjax-container {
+  opacity: 0 !important;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  #repo-content-pjax-container {
+    transition: none;
+  }
+}

@@ -18,6 +18,7 @@ import { applyNotices } from './features/notices';
 import { applyRedesign } from './features/redesign';
 import { applyScrollTop } from './features/scrollTop';
 import { applyHideViewedFiles } from './features/hideViewedFiles';
+import { applyFadeIn } from './features/fadeIn';
 import { applyEarly, cacheSettings } from './early';
 import { applySidebarToggle, setSidebarToggleListener } from './features/sidebarToggle';
 import { isResizing, setResizing } from './util';
@@ -50,14 +51,16 @@ function applyAll(settings: Settings): void {
     run('hideComments', () => applyHideButtons(settings));
     // Before layout: the checks box leaves a collapsed sidebar for the top.
     run('sidebarToggle', () => applySidebarToggle(settings));
-    run('layout', () => {
-      if (!navigating) applyLayout(settings);
-    });
+    // Mid-navigation only the widths and other <html> attributes are applied,
+    // so the incoming view paints at our layout; nodes move once it settles.
+    run('layout', () => applyLayout(settings, { move: !navigating }));
     run('nav', () => applyNav(settings));
     run('notices', () => applyNotices(settings));
     run('redesign', () => applyRedesign(settings));
     run('scrollTop', () => applyScrollTop(settings));
     run('hideViewedFiles', () => applyHideViewedFiles(settings));
+    // Last: reveals the PR once everything above has been laid out.
+    run('fadeIn', () => applyFadeIn(!navigating));
   } finally {
     connectObserver();
   }
