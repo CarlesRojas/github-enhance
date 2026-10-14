@@ -66,6 +66,11 @@ Hide sidebar sections you don’t use on PR/issue pages.
   above the timeline); press it again to bring the sidebar back. The
   back-to-top button sits to its left, and the choice is remembered across
   pages.
+- **Hide viewed files** (Layout, off by default) — the **Files changed** tab
+  opens with files you've marked as viewed filtered out, as if *Viewed files*
+  had been unticked in GitHub's file filter. Only pages left at GitHub's
+  default are switched (the filter lives in the `show-viewed-files` URL
+  parameter), so ticking it back on is respected.
 
 ### 4. Repository Tabs
 

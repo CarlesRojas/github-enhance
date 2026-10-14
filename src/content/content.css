@@ -203,6 +203,12 @@ html[data-ghe-sidebar-toggle] #ghe-scroll-top {
   right: calc(24px + 40px + 8px);
 }
 
+/* Hide viewed files (hideViewedFiles.ts): the file filter menu is opened and
+   clicked for a moment on the Files changed page; keep it from flashing. */
+html[data-ghe-hiding-viewed] [class*="prc-AnchoredOverlay-AnchoredOverlay"]:has([role="menu"]) {
+  visibility: hidden !important;
+}
+
 /* Collapsed: the pane is squeezed to zero width (not removed, so React's DOM
    stays intact and the pane keeps its place beside the main column) and the
    column gap goes with it. The extra attribute out-specifies the wide- and

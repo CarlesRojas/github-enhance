@@ -169,6 +169,7 @@ export interface Settings {
     stickySidebar: boolean; // keep the PR sidebar in view while scrolling
     scrollTopButton: boolean; // "back to top" button on scrolled PR pages
     sidebarToggle: boolean; // button to collapse the PR sidebar
+    hideViewedFiles: boolean; // open "Files changed" with viewed files filtered out
     /**
      * Suspend DOM work while the window is being resized and reconcile once it
      * settles. GitHub re-renders on every frame of a drag, and reacting to each
@@ -216,6 +217,7 @@ export const DEFAULT_SETTINGS: Settings = {
     stickySidebar: false,
     scrollTopButton: true,
     sidebarToggle: true,
+    hideViewedFiles: false,
     pauseWhileResizing: true,
     sidebarWidthPct: 40,
     pageMaxWidth: 2000,

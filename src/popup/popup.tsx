@@ -311,6 +311,17 @@ function LayoutGroup({ settings, update }: GroupProps) {
         }
       />
       <Row
+        label="Hide viewed files"
+        description="Open the Files changed tab with files you've marked as viewed already filtered out. Tick Viewed files in GitHub's file filter to show them again."
+        control={
+          <Toggle
+            checked={l.hideViewedFiles}
+            label="Hide viewed files"
+            onChange={(v) => update((s) => (s.layout.hideViewedFiles = v))}
+          />
+        }
+      />
+      <Row
         label="Pause while resizing"
         description="Skip page updates while the window is being resized, then catch up once it settles. Keeps resizing smooth."
         control={

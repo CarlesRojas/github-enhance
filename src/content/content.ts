@@ -17,6 +17,7 @@ import { applyNav } from './features/nav';
 import { applyNotices } from './features/notices';
 import { applyRedesign } from './features/redesign';
 import { applyScrollTop } from './features/scrollTop';
+import { applyHideViewedFiles } from './features/hideViewedFiles';
 import { applySidebarToggle, setSidebarToggleListener } from './features/sidebarToggle';
 import { isResizing, setResizing } from './util';
 
@@ -55,6 +56,7 @@ function applyAll(settings: Settings): void {
     run('notices', () => applyNotices(settings));
     run('redesign', () => applyRedesign(settings));
     run('scrollTop', () => applyScrollTop(settings));
+    run('hideViewedFiles', () => applyHideViewedFiles(settings));
   } finally {
     connectObserver();
   }
