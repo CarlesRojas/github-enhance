@@ -388,8 +388,13 @@ html[data-ghe-redesign][data-color-mode="light"] .AppHeader {
 }
 
 /* The Files-changed sticky toolbar paints its own background; blend it into
-   the page background (the hashed module class is matched by prefix). */
-html[data-ghe-redesign] [class*="PullRequestFilesToolbar-module__toolbar"] {
+   the page background, keeping it opaque so the diffs scrolling under it stay
+   hidden. Its hashed class has changed names (`PullRequestFilesToolbar-module__
+   toolbar…`, now `toolbar__…`), so it's also matched by the file-tree toggle
+   it always contains. */
+html[data-ghe-redesign] [class*="PullRequestFilesToolbar-module__toolbar"],
+html[data-ghe-redesign]
+  section[class*="stickyHeader"]:has([data-testid="collapse-file-tree-button"]) {
   background-color: var(--ghe-page-bg) !important;
 }
 
